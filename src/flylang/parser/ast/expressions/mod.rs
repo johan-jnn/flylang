@@ -1,0 +1,182 @@
+use crate::flylang::{
+    errors::lang_err,
+    lexer::tokens::{Keywords, Literals, Toggleable, Tokens},
+    module::slice::LangModuleSlice,
+    parser::{
+        ast::{
+            BoxedNode, Node,
+            definables::Definables,
+            expressions::{
+                call::Call,
+                operations::Operations,
+                property::ReadProperty,
+                reverse::{Reverse, ReverseKind},
+            },
+            instructions::Instructions,
+        },
+        errors::{Expected, UnexpectedToken},
+        parsable::Parsable,
+    },
+};
+
+pub mod call;
+pub mod operations;
+pub mod property;
+pub mod reverse;
+
+#[derive(Debug, Clone)]
+pub enum Expressions {
+    Literal(Literals),
+    Defined(Definables),
+    Read(ReadProperty),
+    ReturnOf(Call),
+    Reverse(Reverse),
+    Operation(Operations),
+    Prioritized(BoxedNode<Expressions>),
+}
+
+impl Expressions {
+    /// If the expression is a prioritized expression,
+    /// skip the prioritized variant (and children) to get the actual expression
+    pub fn unprioritized(&self) -> &Self {
+        match self {
+            Self::Prioritized(expr) => expr.kind().unprioritized(),
+            _ => self,
+        }
+    }
+}
+
+impl Parsable for Expressions {
+    type ResultKind = Self;
+
+    fn parse(
+        parser: &mut crate::flylang::parser::Parser,
+        previous: Option<super::Node>,
+        lazy: bool,
+    ) -> crate::flylang::errors::LangResult<super::Node<Self::ResultKind>> {
+        parser.analyser.min_len(1);
+        assert_eq!(parser.analyser.range().len(), 1);
+
+        let token = parser.analyser.get()[0].clone();
+
+        let node = match token.kind() {
+            Tokens::Literal(l) => {
+                if previous.is_some() {
+                    return lang_err!(UnexpectedToken(token));
+                }
+
+                Node::new(Expressions::Literal(l.clone()), token.location())
+            }
+            Tokens::VarDef(_) | Tokens::Keyword(Keywords::Fn) => {
+                let defined = Definables::parse(parser, previous, lazy)?;
+                defined.clone_as(|k, l| (Self::Defined(k), l))
+            }
+            Tokens::Not => {
+                if previous.is_some() || !parser.analyser.able_to(0, 1) {
+                    return lang_err!(UnexpectedToken(token));
+                };
+                parser.analyser.next(0, 1);
+                let reverse = Expressions::parse(parser, None, true)?;
+                let location = LangModuleSlice::from(&vec![
+                    token.location().clone(),
+                    reverse.location().clone(),
+                ]);
+
+                Node::new(
+                    Self::Reverse(Reverse {
+                        kind: ReverseKind::Boolean,
+                        expression: reverse.into(),
+                    }),
+                    &location,
+                )
+            }
+            Tokens::Operator(_) | Tokens::BinaryOperator(_) | Tokens::Comparison(_) => {
+                let operation = Operations::parse(parser, previous, lazy)?;
+                operation.clone_as(|k, l| {
+                    (
+                        // We re-order the operation only if we're not lazy
+                        // This prevents to reorder at each parsing step.
+                        Expressions::Operation(k),
+                        l,
+                    )
+                })
+            }
+
+            Tokens::Block(Toggleable::Openning) => {
+                if let Some(previous) = previous {
+                    // Function call
+                    Call::parse(parser, Some(previous), true)?
+                        .clone_as(|k, l| (Expressions::ReturnOf(k), l))
+                } else {
+                    // Priority
+                    // Thanks to the lexer, the priority is sure to have an ending part.
+                    parser.analyser.next(0, 1);
+
+                    let mut expr = Expressions::parse(parser, None, false)?;
+                    let Some(closing) = parser.analyser.lookup(0, 1) else {
+                        return lang_err!(Expected {
+                            after: expr.location().clone(),
+                            expected: Some(String::from(")")),
+                            but_found: None
+                        });
+                    };
+
+                    if !matches!(closing[0].kind(), Tokens::Block(Toggleable::Closing)) {
+                        return lang_err!(Expected {
+                            after: expr.location().clone(),
+                            expected: Some(String::from(")")),
+                            but_found: Some(closing[0].location().code().to_string())
+                        });
+                    };
+
+                    // Include the closing block
+                    parser.analyser.increase(1);
+
+                    // Now the expression is the whole block, so we include the openning/closing tags in it
+                    let priority_location = LangModuleSlice::from(&vec![
+                        token.location().clone(),
+                        parser.analyser_slice(),
+                    ]);
+
+                    let priority = Node::new(Self::Prioritized(expr.into()), &priority_location);
+
+                    // In lazy-mode, we return early the priority
+                    // because we included the ending block inside it
+                    if lazy {
+                        return Ok(priority);
+                    }
+
+                    priority
+                }
+            }
+            Tokens::Accessor => ReadProperty::parse(parser, previous, lazy)?
+                .clone_as(|k, l| (Expressions::Read(k), l)),
+            _ => return lang_err!(UnexpectedToken(token)),
+        };
+
+        if let Some(slice) = parser.analyser.lookup(0, 1) {
+            let kind = slice[0].kind();
+
+            // ? Explainations:
+            // If the next token matches an end of instruction
+            // Or we're in lazy-mode and the next token requires a non-lazy mode
+            // Then we do not recurcivly call the parsing method.
+            if !(matches!(
+                kind,
+                Tokens::Block(Toggleable::Closing)
+                    | Tokens::EndOfInstruction
+                    | Tokens::ArgSeparator
+            ) || lazy && matches!(kind, Tokens::Operator(_) | Tokens::BinaryOperator(_)))
+            {
+                parser.analyser.next(0, 1);
+                return Self::parse(
+                    parser,
+                    Some(node.clone_as(|e, l| (Instructions::ValueOf(e), l))),
+                    lazy,
+                );
+            }
+        }
+
+        Ok(node)
+    }
+}

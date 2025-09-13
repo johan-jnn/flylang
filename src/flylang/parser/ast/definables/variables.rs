@@ -1,0 +1,108 @@
+use crate::flylang::{
+    errors::lang_err,
+    lexer::tokens::{Literals, Tokens, VarDefinition},
+    module::slice::LangModuleSlice,
+    parser::{
+        ast::{
+            BoxedNode, Node,
+            expressions::{
+                Expressions,
+                operations::{Operation, Operations},
+                property::ReadProperty,
+            },
+            instructions::Instructions,
+        },
+        errors::{Expected, UnexpectedNode, UnexpectedToken},
+        parsable::Parsable,
+    },
+};
+
+#[derive(Debug, Clone)]
+pub enum VariableEmplacements {
+    Scope,
+    Property(ReadProperty),
+}
+
+#[derive(Debug, Clone)]
+pub struct DefineVariable {
+    pub emplacement: Node<VariableEmplacements>,
+    pub value: BoxedNode<Expressions>,
+    pub readonly: bool,
+}
+
+impl Parsable for DefineVariable {
+    type ResultKind = Self;
+    fn parse(
+        parser: &mut crate::flylang::parser::Parser,
+        previous: Option<crate::flylang::parser::ast::Node>,
+        _lazy: bool,
+    ) -> crate::flylang::errors::LangResult<crate::flylang::parser::ast::Node<Self::ResultKind>>
+    {
+        assert!(
+            parser.analyser.min_len(1)
+                && matches!(parser.analyser.get()[0].kind(), Tokens::VarDef(_))
+        );
+
+        let token = parser.analyser.get()[0].clone();
+        let Tokens::VarDef(def_kind) = token.kind() else {
+            // Condition verified above.
+            panic!()
+        };
+
+        let Some(emplacement_instruction) = previous else {
+            return lang_err!(UnexpectedToken(token));
+        };
+        let Instructions::ValueOf(emplacement_expression) = emplacement_instruction.kind() else {
+            return lang_err!(UnexpectedNode(emplacement_instruction));
+        };
+        let emplacement = match emplacement_expression {
+            Expressions::Literal(Literals::Word) => VariableEmplacements::Scope,
+            Expressions::Read(property) => VariableEmplacements::Property(property.clone()),
+            _ => return lang_err!(UnexpectedNode(emplacement_instruction)),
+        };
+
+        // Set the analyser on the value instruction
+        if !parser.analyser.able_to(0, 1) {
+            return lang_err!(Expected {
+                after: token.location().clone(),
+                but_found: None,
+                expected: Some(String::from("variable's new value"))
+            });
+        }
+        parser.analyser.next(0, 1);
+
+        let expression = Expressions::parse(parser, None, false)?;
+        let def_location = LangModuleSlice::from(&vec![
+            emplacement_instruction.location().clone(),
+            parser.analyser_slice(),
+        ]);
+
+        let value = if let VarDefinition::WithOperation(operator) = def_kind {
+            Node::new(
+                Expressions::Operation(Operations::Numeric(Operation {
+                    operator: operator.clone(),
+                    operands: (
+                        Node::new(
+                            emplacement_expression.clone(),
+                            emplacement_instruction.location(),
+                        )
+                        .into(),
+                        expression.into(),
+                    ),
+                })),
+                &def_location,
+            )
+        } else {
+            expression
+        };
+
+        Ok(Node::new(
+            Self {
+                emplacement: Node::new(emplacement, emplacement_instruction.location()),
+                value: Box::new(value),
+                readonly: matches!(def_kind, VarDefinition::Constant),
+            },
+            &def_location,
+        ))
+    }
+}
