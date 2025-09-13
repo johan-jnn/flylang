@@ -19,6 +19,8 @@ For exemple, you download a Flylang Add-On on a website (maybe the futur flylang
 
 ## RoadMap
 
+This roadmap may change in futur (because I surely forget some features)
+
 ### Lexer
 
 Points ending with `*` means the syntax may change in futur.
@@ -38,8 +40,6 @@ Points ending with `*` means the syntax may change in futur.
 - [x] Operations (_`+`, `-`, `_`, `\*_`, `/`, `//`, `&`(and),`?`(or),`~`(xor),`=`(equal),`<`, `>`_)
 - [x] Variable declarations (_`:`, `::`_)
 - [ ] Objects/arrays (_`{`, `}`_)
-
-This roadmap may change in futur (because I surely forget some features)
 
 ### Parser
 
