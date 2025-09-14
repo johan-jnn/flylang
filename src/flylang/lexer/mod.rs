@@ -582,11 +582,21 @@ impl Lexer {
             "=" => {
                 self.validate_analyser(Tokens::Comparison(tokens::Comparison::Equal));
             }
-            "<" => {
-                self.validate_analyser(Tokens::Comparison(tokens::Comparison::Less));
-            }
-            ">" => {
-                self.validate_analyser(Tokens::Comparison(tokens::Comparison::Greater));
+            "<" | ">" => {
+                let mut strict = true;
+                if let Some(next) = self.analyser.lookup(0, 1) {
+                    if next[0].code() == '=' {
+                        strict = false;
+                        self.analyser.increase(1);
+                    }
+                }
+
+                self.validate_analyser(Tokens::Comparison(match slice.code() {
+                    ">" => tokens::Comparison::Greater(strict),
+                    "<" => tokens::Comparison::Less(strict),
+                    // Will never happen.
+                    _ => panic!(),
+                }));
             }
             "|" => {
                 let mut stopper = '|';

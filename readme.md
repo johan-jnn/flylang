@@ -39,7 +39,7 @@ Points ending with `*` means the syntax may change in futur.
 - [x] Loops (_`while`, `until` & `for`_)\*
 - [x] Operations (_`+`, `-`, `_`, `\*_`, `/`, `//`, `&`(and),`?`(or),`~`(xor),`=`(equal),`<`, `>`_)
 - [x] Variable declarations (_`:`, `::`_)
-- [ ] Objects/arrays (_`{`, `}`_)
+- [x] Objects/arrays (_`{`, `}`_)
 
 ### Parser
 
@@ -51,7 +51,7 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Variable declaration
 - [x] Operations and priorities
 - [ ] Class definition/instanciation
-- [ ] If/else
+- [x] If/else
 - [ ] Loops
 - [ ] Objects
 - [ ] Arrays

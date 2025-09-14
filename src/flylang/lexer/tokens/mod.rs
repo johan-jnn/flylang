@@ -61,18 +61,20 @@ pub enum Operator {
 
 #[derive(Debug, Clone)]
 // ! Order is important :
-// ! Greater index is stronger
+// ! Greater index will be executed first
 pub enum BinaryOperator {
-    Or,
-    Xor,
     And,
+    Xor,
+    Or,
 }
 
 #[derive(Debug, Clone)]
 pub enum Comparison {
     Equal,
-    Less,
-    Greater,
+    /// Value is `true` if it is strict
+    Less(bool),
+    /// Value is `true` if it is strict
+    Greater(bool),
 }
 
 #[derive(Debug, Clone)]

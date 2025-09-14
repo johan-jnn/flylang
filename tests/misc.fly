@@ -1,1 +1,13 @@
-0 ? false &true
+if(true,
+  1
+) else (
+  false
+)
+
+var: if(false, 1, 0);
+
+if(var,
+  false
+) else if(true,
+  2
+)

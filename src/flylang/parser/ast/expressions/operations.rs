@@ -48,27 +48,35 @@ impl Parsable for Operations {
         );
 
         let token = parser.analyser.get()[0].clone();
-
         let Some(left_node) = previous else {
-            // todo If the token is "-" --> Reverse(Sign, right_operand)
-            unimplemented!()
-        };
-
-        let Instructions::ValueOf(left_expression) = left_node.kind() else {
-            return lang_err!(UnexpectedNode(left_node));
+            return lang_err!(UnexpectedToken(token));
         };
 
         if !parser.analyser.able_to(0, 1) {
             return lang_err!(UnexpectedToken(token));
         };
-
         parser.analyser.next(0, 1);
         let mut right_operand = Expressions::parse(parser, None, true)?;
+
+        let Instructions::ValueOf(left_expression) = left_node.kind() else {
+            return lang_err!(UnexpectedNode(left_node));
+        };
 
         // ? Operation ordering
         while let Some(slice) = parser.analyser.lookup(0, 1) {
             // If the next token is stronger that the current one, we parse the next one first
-            let next_token = slice[0].kind();
+            let mut next_token = slice[0].kind();
+
+            // Handle the case "!<", "!&", ...
+            let skip_one = matches!(next_token, Tokens::Not);
+            if skip_one {
+                if let Some(slice) = parser.analyser.lookup(1, 1) {
+                    next_token = slice[0].kind();
+                } else {
+                    return lang_err!(UnexpectedToken(slice[0].clone()));
+                }
+            }
+
             let use_next = match next_token {
                 Tokens::Operator(operator) => {
                     !matches!(operator, Operator::Add | Operator::Substract)
@@ -82,7 +90,7 @@ impl Parsable for Operations {
                 }
                 Tokens::BinaryOperator(op_next) => {
                     if let Tokens::BinaryOperator(op_now) = token.kind() {
-                        (op_now.clone() as usize) > (op_next.clone() as usize)
+                        (op_now.clone() as usize) < (op_next.clone() as usize)
                     } else {
                         false
                     }
@@ -91,7 +99,7 @@ impl Parsable for Operations {
             };
 
             if use_next {
-                parser.analyser.next(0, 1);
+                parser.analyser.next(skip_one as usize, 1);
                 right_operand = Expressions::parse(
                     parser,
                     Some(right_operand.clone_as(|k, l| (Instructions::ValueOf(k), l))),
