@@ -1,1 +1,11 @@
-{:}
+reverse_of: 0;
+
+std.out(
+  {fn(1), fn(0)}.(reverse_of)
+);
+
+dico: {
+  flylang: "prog. language",
+  10: "number",
+  "hello": !true
+}
