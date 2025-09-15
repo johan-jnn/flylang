@@ -8,6 +8,7 @@ use crate::flylang::{
             definables::Definables,
             expressions::{
                 call::Call,
+                objects::{Array, PrimaryObject, Structure},
                 operations::Operations,
                 property::ReadProperty,
                 reverse::{Reverse, ReverseKind},
@@ -16,11 +17,13 @@ use crate::flylang::{
             instructions::Instructions,
         },
         errors::{Expected, UnexpectedNode, UnexpectedToken},
+        mods::ParserBehaviors,
         parsable::Parsable,
     },
 };
 
 pub mod call;
+pub mod objects;
 pub mod operations;
 pub mod property;
 pub mod reverse;
@@ -36,6 +39,8 @@ pub enum Expressions {
     Operation(Operations),
     Prioritized(BoxedNode<Expressions>),
     Ternary(Ternary),
+    Structure(Structure),
+    Array(Array),
 }
 
 impl Expressions {
@@ -55,7 +60,6 @@ impl Parsable for Expressions {
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<super::Node>,
-        lazy: bool,
     ) -> crate::flylang::errors::LangResult<super::Node<Self::ResultKind>> {
         parser.analyser.min_len(1);
         assert_eq!(parser.analyser.range().len(), 1);
@@ -71,18 +75,31 @@ impl Parsable for Expressions {
                 Node::new(Expressions::Literal(l.clone()), token.location())
             }
             Tokens::VarDef(_) | Tokens::Keyword(Keywords::Fn) => {
-                let defined = Definables::parse(parser, previous, lazy)?;
+                let defined = Definables::parse(parser, previous)?;
                 defined.clone_as(|k, l| (Self::Defined(k), l))
             }
             Tokens::Keyword(Keywords::If) => {
                 // The ternary expressions is parsed in the same code as a if block (parsed in instructions)
-                let instruction = Instructions::parse(parser, previous, true)?;
+                parser.behaviors.insert(ParserBehaviors::Lazy);
+                let instruction = Instructions::parse(parser, previous)?;
                 let Instructions::ValueOf(Expressions::Ternary(ternary)) = instruction.kind()
                 else {
                     return lang_err!(UnexpectedNode(instruction));
                 };
 
                 Node::new(Self::Ternary(ternary.clone()), instruction.location())
+            }
+            Tokens::Object(Toggleable::Openning) => {
+                let object = PrimaryObject::parse(parser, previous)?;
+                object.clone_as(|kind, l| {
+                    (
+                        match kind {
+                            PrimaryObject::Arr(arr) => Self::Array(arr),
+                            PrimaryObject::Struct(structure) => Self::Structure(structure),
+                        },
+                        l,
+                    )
+                })
             }
             Tokens::Not => {
                 if !parser.analyser.able_to(0, 1) {
@@ -96,13 +113,14 @@ impl Parsable for Expressions {
                         Tokens::Comparison(_) | Tokens::BinaryOperator(_)
                     ) {
                         // Cover the case "xx !< yy", "xx !& yy", ...
-                        Operations::parse(parser, previous, lazy)?
+                        Operations::parse(parser, previous)?
                             .clone_as(|k, l| (Expressions::Operation(k), l))
                     } else {
                         return lang_err!(UnexpectedToken(token));
                     }
                 } else {
-                    Expressions::parse(parser, None, true)?
+                    parser.behaviors.insert(ParserBehaviors::Lazy);
+                    Expressions::parse(parser, None)?
                 };
 
                 let location = LangModuleSlice::from(&vec![
@@ -127,7 +145,9 @@ impl Parsable for Expressions {
                         return lang_err!(UnexpectedToken(token));
                     }
                     parser.analyser.next(0, 1);
-                    let invert = Self::parse(parser, None, true)?;
+
+                    parser.behaviors.insert(ParserBehaviors::Lazy);
+                    let invert = Self::parse(parser, None)?;
                     let location = LangModuleSlice::from(&vec![
                         token.location().clone(),
                         invert.location().clone(),
@@ -141,7 +161,7 @@ impl Parsable for Expressions {
                         &location,
                     )
                 } else {
-                    let operation = Operations::parse(parser, previous, lazy)?;
+                    let operation = Operations::parse(parser, previous)?;
                     operation.clone_as(|k, l| {
                         (
                             // We re-order the operation only if we're not lazy
@@ -156,14 +176,16 @@ impl Parsable for Expressions {
             Tokens::Block(Toggleable::Openning) => {
                 if let Some(previous) = previous {
                     // Function call
-                    Call::parse(parser, Some(previous), true)?
+                    parser.behaviors.insert(ParserBehaviors::Lazy);
+                    Call::parse(parser, Some(previous))?
                         .clone_as(|k, l| (Expressions::ReturnOf(k), l))
                 } else {
                     // Priority
                     // Thanks to the lexer, the priority is sure to have an ending part.
                     parser.analyser.next(0, 1);
 
-                    let mut expr = Expressions::parse(parser, None, false)?;
+                    parser.behaviors.remove(&ParserBehaviors::Lazy);
+                    let expr = Expressions::parse(parser, None)?;
                     let Some(closing) = parser.analyser.lookup(0, 1) else {
                         return lang_err!(Expected {
                             after: expr.location().clone(),
@@ -193,15 +215,16 @@ impl Parsable for Expressions {
 
                     // In lazy-mode, we return early the priority
                     // because we included the ending block inside it
-                    if lazy {
+                    if parser.behaviors.contains(&ParserBehaviors::Lazy) {
                         return Ok(priority);
                     }
 
                     priority
                 }
             }
-            Tokens::Accessor => ReadProperty::parse(parser, previous, lazy)?
-                .clone_as(|k, l| (Expressions::Read(k), l)),
+            Tokens::Accessor => {
+                ReadProperty::parse(parser, previous)?.clone_as(|k, l| (Expressions::Read(k), l))
+            }
             _ => return lang_err!(UnexpectedToken(token)),
         };
 
@@ -215,15 +238,16 @@ impl Parsable for Expressions {
             if !(matches!(
                 kind,
                 Tokens::Block(Toggleable::Closing)
+                    | Tokens::Object(Toggleable::Closing)
                     | Tokens::EndOfInstruction
                     | Tokens::ArgSeparator
-            ) || lazy && matches!(kind, Tokens::Operator(_) | Tokens::BinaryOperator(_)))
+            ) || parser.behaviors.contains(&ParserBehaviors::Lazy)
+                && matches!(kind, Tokens::Operator(_) | Tokens::BinaryOperator(_)))
             {
                 parser.analyser.next(0, 1);
                 return Self::parse(
                     parser,
                     Some(node.clone_as(|e, l| (Instructions::ValueOf(e), l))),
-                    lazy,
                 );
             }
         }

@@ -1,15 +1,15 @@
-use std::{mem::take, ops::Range, rc::Rc, vec};
+use std::{collections::HashSet, mem::take, rc::Rc, vec};
 
 use crate::flylang::{
-    errors::{LangResult, RaisableErr, lang_err},
+    errors::LangResult,
     lexer::{
         Lexer,
-        tokens::{self, Token, Tokens},
+        tokens::{Token, Tokens},
     },
     module::{LangModule, slice::LangModuleSlice},
     parser::{
-        ast::{Branches, Node, instructions::Instructions},
-        errors::EmptyScope,
+        ast::{Branches, instructions::Instructions},
+        mods::ParserBehaviors,
         parsable::Parsable,
     },
     utils::analyser::Analyser,
@@ -17,6 +17,7 @@ use crate::flylang::{
 
 pub mod ast;
 pub mod errors;
+pub mod mods;
 pub mod parsable;
 
 #[derive(Debug)]
@@ -24,6 +25,7 @@ pub struct Parser {
     module: Rc<LangModule>,
     analyser: Analyser<Token<Tokens>>,
     parsed: Branches,
+    behaviors: HashSet<ParserBehaviors>,
 }
 
 impl Parser {
@@ -34,6 +36,7 @@ impl Parser {
             module: Rc::clone(module),
             analyser: Analyser::new(stream),
             parsed: vec![],
+            behaviors: HashSet::new(),
         }
     }
     pub fn module(&self) -> &Rc<LangModule> {
@@ -79,18 +82,31 @@ impl Parser {
     /// If this paramter is not given (or the splitting condition is never filled),
     /// you'll receive 1 array of branches as a `Ok()` result.
     ///
+    /// ## `persistant_behaviors`
+    /// If you want some parser's behaviors to not being deleted for each instructions, set them in this vector.
+    ///
     /// # Analyser side-effects
     /// - The analyser is set to the token that has terminated the method processus (or to empty if the processus is finished.)
+    ///
+    /// # Behaviors
+    /// - For each instructions, the parser behavior's is reset to the persistant ones (or empty).
+    /// - After branches are analysed, it is reset to one before the method has been called
     fn branches(
         &mut self,
         force_stop: impl Fn(&Self, &Token) -> bool,
         splitted_by: impl Fn(&Self, &Token) -> bool,
+        persistant_behaviors: Option<Vec<ParserBehaviors>>,
     ) -> LangResult<Vec<Branches>> {
         assert!(self.analyser.range().len() <= 1);
         let mut result = vec![];
         let mut analysing = vec![];
 
+        let reset = self.behaviors.clone();
+        let behaviors = HashSet::from_iter(persistant_behaviors.unwrap_or_default());
+
         while self.analyser.min_len(1) {
+            self.behaviors = behaviors.clone();
+
             let token = &self.analyser.get()[0];
             if force_stop(self, token) {
                 break;
@@ -103,11 +119,12 @@ impl Parser {
             };
 
             if !matches!(token.kind(), Tokens::EndOfInstruction) {
-                analysing.push(Instructions::parse(self, None, false)?);
+                analysing.push(Instructions::parse(self, None)?);
             }
 
             self.analyser.next(0, 0);
         }
+        self.behaviors = reset;
         result.push(take(&mut analysing));
 
         Ok(result)
@@ -115,7 +132,11 @@ impl Parser {
 
     /// Execute the parser and return the vector of instructions
     pub fn parse(&mut self) -> &Branches {
-        let branches = self.branches(|state, _| state.analyser.process_finished(), |_, _| false);
+        let branches = self.branches(
+            |state, _| state.analyser.process_finished(),
+            |_, _| false,
+            None,
+        );
         self.parsed = branches.unwrap_or_else(|e| e.raise()).pop().unwrap();
 
         &self.parsed

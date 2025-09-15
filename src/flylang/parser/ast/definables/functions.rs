@@ -24,7 +24,6 @@ impl Parsable for DefineFunction {
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<Node>,
-        _lazy: bool,
     ) -> crate::flylang::errors::LangResult<Node<Self::ResultKind>> {
         assert!(
             parser.analyser.min_len(1)
@@ -72,6 +71,7 @@ impl Parsable for DefineFunction {
         let mut branches = parser.branches(
             |_, t| matches!(t.kind(), Tokens::Block(Toggleable::Closing)),
             |_, t| matches!(t.kind(), Tokens::ArgSeparator),
+            None,
         )?;
 
         let execution = branches.pop().unwrap();

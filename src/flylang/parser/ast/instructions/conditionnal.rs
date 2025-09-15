@@ -37,7 +37,6 @@ impl Parsable for If {
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<Node>,
-        lazy: bool,
     ) -> crate::flylang::errors::LangResult<Node<Self::ResultKind>> {
         assert!(
             parser.analyser.min_len(1)
@@ -71,6 +70,7 @@ impl Parsable for If {
         let branches = parser.branches(
             |_, token| matches!(token.kind(), Tokens::Block(Toggleable::Closing)),
             |_, token| matches!(token.kind(), Tokens::ArgSeparator),
+            None,
         )?;
 
         let arguments_location =
@@ -149,7 +149,7 @@ impl Parsable for If {
             if matches!(slice[0].kind(), Tokens::Keyword(Keywords::Else)) {
                 parser.analyser.next(0, 1);
 
-                Some(Box::new(IfFallBack::parse(parser, previous, lazy)?))
+                Some(Box::new(IfFallBack::parse(parser, previous)?))
             } else {
                 None
             }
@@ -182,7 +182,6 @@ impl Parsable for IfFallBack {
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<Node>,
-        lazy: bool,
     ) -> crate::flylang::errors::LangResult<Node<Self::ResultKind>> {
         assert!(
             parser.analyser.min_len(1)
@@ -200,7 +199,7 @@ impl Parsable for IfFallBack {
 
         match parser.analyser.get()[0].kind() {
             Tokens::Keyword(Keywords::If) => {
-                let result = If::parse(parser, previous, lazy)?;
+                let result = If::parse(parser, previous)?;
                 let condition = match result.kind() {
                     IfResult::If(c) => c,
                     IfResult::Ternary(t) => {
@@ -226,6 +225,7 @@ impl Parsable for IfFallBack {
                 let branches = parser.branches(
                     |_, token| matches!(token.kind(), Tokens::Block(Toggleable::Closing)),
                     |_, _| false,
+                    None,
                 )?;
 
                 let location =
@@ -234,11 +234,11 @@ impl Parsable for IfFallBack {
                 Ok(Node::new(Self::Process(branches[0].clone()), &location))
             }
             _ => {
-                return lang_err!(Expected {
+                lang_err!(Expected {
                     after: token.location().clone(),
                     expected: Some(String::from("( or <if_instruction>")),
                     but_found: Some(parser.analyser.get()[0].location().code().to_string())
-                });
+                })
             }
         }
     }

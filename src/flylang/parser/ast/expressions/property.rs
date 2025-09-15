@@ -5,6 +5,7 @@ use crate::flylang::{
     parser::{
         ast::{BoxedNode, Node, expressions::Expressions, instructions::Instructions},
         errors::{Expected, UnexpectedNode, UnexpectedToken},
+        mods::ParserBehaviors,
         parsable::Parsable,
     },
 };
@@ -28,7 +29,6 @@ impl Parsable for ReadProperty {
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<Node>,
-        _lazy: bool,
     ) -> crate::flylang::errors::LangResult<Node<Self::ResultKind>> {
         assert!(
             parser.analyser.range().len() == 1
@@ -56,7 +56,9 @@ impl Parsable for ReadProperty {
             Tokens::Literal(Literals::Number) => Property::Index,
             Tokens::Literal(Literals::Word) => Property::Key,
             Tokens::Block(Toggleable::Openning) => {
-                Property::Expression(Box::new(Expressions::parse(parser, None, true)?))
+                parser.behaviors.insert(ParserBehaviors::Lazy);
+
+                Property::Expression(Box::new(Expressions::parse(parser, None)?))
             }
             _ => return lang_err!(UnexpectedToken(next)),
         };

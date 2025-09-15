@@ -6,6 +6,7 @@ use crate::flylang::{
             expressions::Expressions,
             instructions::conditionnal::{If, IfResult},
         },
+        mods::ParserBehaviors,
         parsable::Parsable,
     },
 };
@@ -22,7 +23,6 @@ impl Parsable for Instructions {
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<super::Node>,
-        lazy: bool,
     ) -> crate::flylang::errors::LangResult<super::Node<Self::ResultKind>> {
         parser.analyser.min_len(1);
         assert_eq!(parser.analyser.range().len(), 1);
@@ -33,7 +33,7 @@ impl Parsable for Instructions {
             Tokens::EndOfInstruction => previous
                 .expect("Tried to parse an 'EndOfInstruction' token with no previous value."),
             Tokens::Keyword(Keywords::If) => {
-                let result = If::parse(parser, previous, lazy)?;
+                let result = If::parse(parser, previous)?;
 
                 match result.kind() {
                     IfResult::If(condition) => {
@@ -46,7 +46,9 @@ impl Parsable for Instructions {
                 }
             }
             _ => {
-                let expr = Expressions::parse(parser, previous, false)?;
+                parser.behaviors.remove(&ParserBehaviors::Lazy);
+
+                let expr = Expressions::parse(parser, previous)?;
                 Node::new(Self::ValueOf(expr.kind().clone()), expr.location())
             }
         };

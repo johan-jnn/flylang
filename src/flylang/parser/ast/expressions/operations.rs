@@ -1,12 +1,11 @@
-use either::Either;
-
 use crate::flylang::{
     errors::lang_err,
-    lexer::tokens::{self, BinaryOperator, Operator, Token, Tokens},
+    lexer::tokens::{self, Operator, Token, Tokens},
     module::slice::LangModuleSlice,
     parser::{
         ast::{BoxedNode, Node, expressions::Expressions, instructions::Instructions},
         errors::{UnexpectedNode, UnexpectedToken},
+        mods::ParserBehaviors,
         parsable::Parsable,
     },
 };
@@ -36,7 +35,6 @@ impl Parsable for Operations {
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<crate::flylang::parser::ast::Node>,
-        _lazy: bool,
     ) -> crate::flylang::errors::LangResult<crate::flylang::parser::ast::Node<Self::ResultKind>>
     {
         assert!(
@@ -56,7 +54,8 @@ impl Parsable for Operations {
             return lang_err!(UnexpectedToken(token));
         };
         parser.analyser.next(0, 1);
-        let mut right_operand = Expressions::parse(parser, None, true)?;
+        parser.behaviors.insert(ParserBehaviors::Lazy);
+        let mut right_operand = Expressions::parse(parser, None)?;
 
         let Instructions::ValueOf(left_expression) = left_node.kind() else {
             return lang_err!(UnexpectedNode(left_node));
@@ -100,10 +99,11 @@ impl Parsable for Operations {
 
             if use_next {
                 parser.analyser.next(skip_one as usize, 1);
+                parser.behaviors.insert(ParserBehaviors::Lazy);
+
                 right_operand = Expressions::parse(
                     parser,
                     Some(right_operand.clone_as(|k, l| (Instructions::ValueOf(k), l))),
-                    true,
                 )?
             } else {
                 break;

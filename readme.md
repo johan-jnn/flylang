@@ -53,8 +53,8 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [ ] Class definition/instanciation
 - [x] If/else
 - [ ] Loops
-- [ ] Objects
-- [ ] Arrays
+- [x] Objects (_unstable_)
+- [x] Arrays
 
 ## Syntax
 

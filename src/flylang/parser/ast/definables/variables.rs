@@ -13,6 +13,7 @@ use crate::flylang::{
             instructions::Instructions,
         },
         errors::{Expected, UnexpectedNode, UnexpectedToken},
+        mods::ParserBehaviors,
         parsable::Parsable,
     },
 };
@@ -21,6 +22,10 @@ use crate::flylang::{
 pub enum VariableEmplacements {
     Scope,
     Property(ReadProperty),
+    /// This should never be used.
+    ///
+    /// It is here to allow structure to have any expression as key (expect object access)
+    Any(Box<Expressions>),
 }
 
 #[derive(Debug, Clone)]
@@ -35,7 +40,6 @@ impl Parsable for DefineVariable {
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<crate::flylang::parser::ast::Node>,
-        _lazy: bool,
     ) -> crate::flylang::errors::LangResult<crate::flylang::parser::ast::Node<Self::ResultKind>>
     {
         assert!(
@@ -55,10 +59,25 @@ impl Parsable for DefineVariable {
         let Instructions::ValueOf(emplacement_expression) = emplacement_instruction.kind() else {
             return lang_err!(UnexpectedNode(emplacement_instruction));
         };
+
+        let any_recursive = parser
+            .behaviors
+            .contains(&ParserBehaviors::AllowAnyVariableEmplacement(true));
+        let allow_any = any_recursive
+            || parser
+                .behaviors
+                .contains(&ParserBehaviors::AllowAnyVariableEmplacement(false));
+
         let emplacement = match emplacement_expression {
             Expressions::Literal(Literals::Word) => VariableEmplacements::Scope,
             Expressions::Read(property) => VariableEmplacements::Property(property.clone()),
-            _ => return lang_err!(UnexpectedNode(emplacement_instruction)),
+            _ => {
+                if allow_any {
+                    VariableEmplacements::Any(Box::new(emplacement_expression.clone()))
+                } else {
+                    return lang_err!(UnexpectedNode(emplacement_instruction));
+                }
+            }
         };
 
         // Set the analyser on the value instruction
@@ -71,7 +90,13 @@ impl Parsable for DefineVariable {
         }
         parser.analyser.next(0, 1);
 
-        let expression = Expressions::parse(parser, None, false)?;
+        parser.behaviors.remove(&ParserBehaviors::Lazy);
+        if !any_recursive {
+            parser.behaviors.retain(|behavior| {
+                !matches!(behavior, ParserBehaviors::AllowAnyVariableEmplacement(_))
+            });
+        }
+        let expression = Expressions::parse(parser, None)?;
         let def_location = LangModuleSlice::from(&vec![
             emplacement_instruction.location().clone(),
             parser.analyser_slice(),

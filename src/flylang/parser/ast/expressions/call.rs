@@ -21,7 +21,6 @@ impl Parsable for Call {
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<crate::flylang::parser::ast::Node>,
-        _lazy: bool,
     ) -> crate::flylang::errors::LangResult<crate::flylang::parser::ast::Node<Self::ResultKind>>
     {
         assert!(
@@ -45,6 +44,7 @@ impl Parsable for Call {
         let branches = parser.branches(
             |_, token| matches!(token.kind(), Tokens::Block(Toggleable::Closing)),
             |_, token| matches!(token.kind(), Tokens::ArgSeparator),
+            None,
         )?;
         let mut arguments = vec![];
 
