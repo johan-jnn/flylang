@@ -66,7 +66,7 @@ impl Lexer {
 
             "while" => Tokens::Keyword(tokens::Keywords::While),
             "until" => Tokens::Keyword(tokens::Keywords::Until),
-            "loop" => Tokens::Keyword(tokens::Keywords::Loop),
+            "each" => Tokens::Keyword(tokens::Keywords::Each),
 
             "return" => Tokens::Keyword(tokens::Keywords::Return),
             "break" => Tokens::Keyword(tokens::Keywords::Break),

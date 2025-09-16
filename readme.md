@@ -26,17 +26,19 @@ This roadmap may change in futur (because I surely forget some features)
 Points ending with `*` means the syntax may change in futur.
 
 - [x] Literals
+- [ ] Scope naming (_`@name (...)`_)
+- [ ] Modifiers (_`#(modifier1, modifier2, ...) fn()`_)
 - [ ] Keywords
   - [x] `if`
   - [x] `else`
   - [x] `fn`
   - [x] `cs`
-  - [ ] `import`\*
-  - [ ] `return`
-  - [ ] `break`
-  - [ ] `continue`
-  - [ ] `pass`
-- [x] Loops (_`while`, `until` & `for`_)\*
+  - [ ] `import`\* (_maybe `use` keyword instead ?_)
+  - [ ] Breakers
+    - _Breakers needs to be able to break any above scope but I don't really know the syntax to use (maybe `<breaker-keyword> [@(scope_name | <+)] [value-returned]`. The `<+` means `@<` will be for the above scope, `@<<` = 2 scopes above, `@<<<` 3 scopes above, ...)_
+    - [ ] `stop` (_this handles `return` and `break`_)
+    - [ ] `pass` (_this also handles `continue`_)
+- [x] Loops (_`while`, `until` & `each`_)
 - [x] Operations (_`+`, `-`, `_`, `\*_`, `/`, `//`, `&`(and),`?`(or),`~`(xor),`=`(equal),`<`, `>`_)
 - [x] Variable declarations (_`:`, `::`_)
 - [x] Objects/arrays (_`{`, `}`_)

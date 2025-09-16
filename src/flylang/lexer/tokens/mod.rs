@@ -42,7 +42,7 @@ pub enum Keywords {
     Else,
     While,
     Until,
-    Loop,
+    Each,
     Break,
     Return,
     Pass,
