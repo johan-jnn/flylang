@@ -55,7 +55,7 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Operations and priorities
 - [ ] Class definition/instanciation
 - [x] If/else
-- [ ] Loops
+- [x] Loops
 - [x] Objects (_unstable_)
 - [x] Arrays
 

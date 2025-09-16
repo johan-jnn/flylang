@@ -4,7 +4,10 @@ use crate::flylang::{
         ast::{
             Node,
             expressions::Expressions,
-            instructions::conditionnal::{If, IfResult},
+            instructions::{
+                conditionnal::{If, IfResult},
+                loops::Loop,
+            },
         },
         mods::ParserBehaviors,
         parsable::Parsable,
@@ -12,11 +15,13 @@ use crate::flylang::{
 };
 
 pub mod conditionnal;
+pub mod loops;
 
 #[derive(Debug, Clone)]
 pub enum Instructions {
     ValueOf(Expressions),
     If(If),
+    Loop(Loop),
 }
 impl Parsable for Instructions {
     type ResultKind = Self;
@@ -44,6 +49,10 @@ impl Parsable for Instructions {
                         result.location(),
                     ),
                 }
+            }
+            Tokens::Keyword(Keywords::Each | Keywords::Until | Keywords::While) => {
+                let result = Loop::parse(parser, previous)?;
+                result.clone_as(|k, l| (Self::Loop(k), l))
             }
             _ => {
                 parser.behaviors.remove(&ParserBehaviors::Lazy);

@@ -1,4 +1,10 @@
-use std::{ffi::OsStr, fmt::Display, fs::read_to_string, path::PathBuf, rc::Rc};
+use std::{
+    ffi::OsStr,
+    fmt::{Debug, Display},
+    fs::read_to_string,
+    path::PathBuf,
+    rc::Rc,
+};
 
 use crate::flylang::{
     errors::{LangResult, RaisableErr, lang_err},
@@ -13,7 +19,7 @@ pub mod char;
 pub mod errors;
 pub mod slice;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct LangModule {
     path: PathBuf,
     code: String,
@@ -50,6 +56,11 @@ impl LangModule {
     }
 }
 impl Display for LangModule {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.path.display())
+    }
+}
+impl Debug for LangModule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.path.display())
     }
