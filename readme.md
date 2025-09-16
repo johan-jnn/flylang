@@ -35,7 +35,8 @@ Points ending with `*` means the syntax may change in futur.
   - [x] `cs`
   - [ ] `import`\* (_maybe `use` keyword instead ?_)
   - [ ] Breakers
-    - _Breakers needs to be able to break any above scope but I don't really know the syntax to use (maybe `<breaker-keyword> [@(scope_name | <+)] [value-returned]`. The `<+` means `@<` will be for the above scope, `@<<` = 2 scopes above, `@<<<` 3 scopes above, ...)_
+    - _Breakers needs to be able to break any above scope but I don't really know the syntax to use (maybe `<breaker-keyword> [@(scope_name | <+)] [value-returned]`. The `<+` means `@<` will be for the above scope, `@<<` = 2 scopes above, `@<<<` 3 scopes above, ...).<br/>
+      The problem using a such syntax, is that I need to allow value returning for `if` and loops blocks (like rust does). But this will lead to a very different syntax that I imagined for the language._
     - [ ] `stop` (_this handles `return` and `break`_)
     - [ ] `pass` (_this also handles `continue`_)
 - [x] Loops (_`while`, `until` & `each`_)
