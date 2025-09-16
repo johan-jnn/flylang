@@ -31,6 +31,8 @@ pub enum Literals {
     #[evt(derive(Debug, Clone))]
     Number,
     #[evt(derive(Debug, Clone))]
+    Empty,
+    #[evt(derive(Debug, Clone))]
     String(Vec<Token<StringItem>>),
 }
 

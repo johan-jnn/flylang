@@ -185,41 +185,56 @@ impl Parsable for Expressions {
                     parser.analyser.next(0, 1);
 
                     parser.behaviors.remove(&ParserBehaviors::Lazy);
-                    let expr = Expressions::parse(parser, None)?;
-                    let Some(closing) = parser.analyser.lookup(0, 1) else {
-                        return lang_err!(Expected {
-                            after: expr.location().clone(),
-                            expected: Some(String::from(")")),
-                            but_found: None
-                        });
-                    };
+                    // Empty block in expression = Empty literal
+                    if matches!(
+                        parser.analyser.get()[0].kind(),
+                        Tokens::Block(Toggleable::Closing)
+                    ) {
+                        Node::new(
+                            Self::Literal(Literals::Empty),
+                            &LangModuleSlice::from(&vec![
+                                token.location().clone(),
+                                parser.analyser_slice(),
+                            ]),
+                        )
+                    } else {
+                        let expr = Expressions::parse(parser, None)?;
+                        let Some(closing) = parser.analyser.lookup(0, 1) else {
+                            return lang_err!(Expected {
+                                after: expr.location().clone(),
+                                expected: Some(String::from(")")),
+                                but_found: None
+                            });
+                        };
 
-                    if !matches!(closing[0].kind(), Tokens::Block(Toggleable::Closing)) {
-                        return lang_err!(Expected {
-                            after: expr.location().clone(),
-                            expected: Some(String::from(")")),
-                            but_found: Some(closing[0].location().code().to_string())
-                        });
-                    };
+                        if !matches!(closing[0].kind(), Tokens::Block(Toggleable::Closing)) {
+                            return lang_err!(Expected {
+                                after: expr.location().clone(),
+                                expected: Some(String::from(")")),
+                                but_found: Some(closing[0].location().code().to_string())
+                            });
+                        };
 
-                    // Include the closing block
-                    parser.analyser.increase(1);
+                        // Include the closing block
+                        parser.analyser.increase(1);
 
-                    // Now the expression is the whole block, so we include the openning/closing tags in it
-                    let priority_location = LangModuleSlice::from(&vec![
-                        token.location().clone(),
-                        parser.analyser_slice(),
-                    ]);
+                        // Now the expression is the whole block, so we include the openning/closing tags in it
+                        let priority_location = LangModuleSlice::from(&vec![
+                            token.location().clone(),
+                            parser.analyser_slice(),
+                        ]);
 
-                    let priority = Node::new(Self::Prioritized(expr.into()), &priority_location);
+                        let priority =
+                            Node::new(Self::Prioritized(expr.into()), &priority_location);
 
-                    // In lazy-mode, we return early the priority
-                    // because we included the ending block inside it
-                    if parser.behaviors.contains(&ParserBehaviors::Lazy) {
-                        return Ok(priority);
+                        // In lazy-mode, we return early the priority
+                        // because we included the ending block inside it
+                        if parser.behaviors.contains(&ParserBehaviors::Lazy) {
+                            return Ok(priority);
+                        }
+
+                        priority
                     }
-
-                    priority
                 }
             }
             Tokens::Accessor => {

@@ -1,18 +1,1 @@
-fn print_name(f,
-  std.out.append(f._name)
-);
-
-#(print_name)
-fn func @f1(items,
-  stop each @loop(items, item,
-    if(item.skip,
-      @f1;
-    )
-
-    if(item.solution,
-      stop@ item;
-    )
-  )
-)
-
-
+()
