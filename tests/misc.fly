@@ -1,12 +1,1 @@
-iterable: {
-  1, 2, 3, 4, 5, 6, 7
-};
-
-each(iterable, item, index,
-  std.out.append("Item #&(index) = &(item)")
-);
-
-|| Weird comparison juste to say "while it is not empty"
-until(iterable.len() !> 0,
-  iterable.pop()
-)
+5 % 2

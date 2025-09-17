@@ -39,8 +39,13 @@ Points ending with `*` means the syntax may change in futur.
       The problem using a such syntax, is that I need to allow value returning for `if` and loops blocks (like rust does). But this will lead to a very different syntax that I imagined for the language._
     - [ ] `stop` (_this handles `return` and `break`_)
     - [ ] `pass` (_this also handles `continue`_)
+  - [ ] **Better breakers (?)**\*
+    - _Note: in `if/else` statements, breakers' scope target are default to `@<`_
+    - [ ] `stop [@scope?]` (_this is used like `break` or `return ()`_)
+    - [ ] `return [@scope?] [value?]` (_only available with functions_)
+    - [ ] `pass [@scope?]` (_works like `return ()`, `continue` and `pass`._)
 - [x] Loops (_`while`, `until` & `each`_)
-- [x] Operations (_`+`, `-`, `_`, `\*_`, `/`, `//`, `&`(and),`?`(or),`~`(xor),`=`(equal),`<`, `>`_)
+- [x] Operations (_`+`, `-`, `_`, `\*\*`, `/`, `//`, `%`, `&`(and), `?`(or), `~`(xor), `=`(equal), `<`, `>`\_)
 - [x] Variable declarations (_`:`, `::`_)
 - [x] Objects/arrays (_`{`, `}`_)
 
