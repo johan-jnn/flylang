@@ -4,14 +4,18 @@ use crate::{
         lexer::{
             errors::{InvalidScopeEnding, UnclosedScope, UnexpectedCharacter, UnknownCharacter},
             ranges::CharacterRange,
-            tokens::{Toggleable, Token, Tokens},
+            tokens::{
+                Literals, Number, ScopeTarget, Toggleable, Token, Tokens,
+                representations::number::NumberRepresentation,
+            },
         },
         module::{LangModule, char::LangModuleChar, slice::LangModuleSlice},
+        parser::errors::Expected,
         utils::{analyser::Analyser, scoper::Scope},
     },
     utils::macros::empty_result,
 };
-use std::{cell::RefCell, mem::take, rc::Rc};
+use std::{cell::RefCell, mem::take, num::NonZero, rc::Rc};
 
 pub mod errors;
 pub mod ranges;
@@ -69,7 +73,7 @@ impl Lexer {
             "each" => Tokens::Keyword(tokens::Keywords::Each),
 
             "return" => Tokens::Keyword(tokens::Keywords::Return),
-            "break" => Tokens::Keyword(tokens::Keywords::Break),
+            "stop" => Tokens::Keyword(tokens::Keywords::Stop),
             "pass" => Tokens::Keyword(tokens::Keywords::Pass),
 
             "if" => Tokens::Keyword(tokens::Keywords::If),
@@ -412,7 +416,6 @@ impl Lexer {
             }
             self.analyser.increase(1);
         }
-        dbg!(self.analyser.range(), self.analyser.lookup(0, 1));
         self.validate_analyser(Tokens::Literal(tokens::Literals::Number));
 
         empty_result::ok!()
@@ -507,6 +510,78 @@ impl Lexer {
 
                 self.validate_analyser(Tokens::Operator(operator));
             }
+            "@" => {
+                // @<varname-like>
+                // or
+                // @<+
+                let mut amount: Option<NonZero<usize>> = None;
+                while let Some(slice) = self.analyser.lookup(0, 1) {
+                    if slice[0].code() == '<' {
+                        self.analyser.increase(1);
+
+                        amount = Some(if let Some(val) = amount {
+                            val.checked_add(1).expect("Overflow error")
+                        } else {
+                            NonZero::new(1).unwrap()
+                        })
+                    } else {
+                        break;
+                    }
+                }
+
+                if let Some(amount) = amount {
+                    self.validate_analyser(Tokens::ScopeTarget(ScopeTarget::Numbered(amount)));
+                } else {
+                    let expectation = String::from("multiple '<', an integer > 0 or a word");
+
+                    // handle as a variable
+                    if !self.analyser.able_to(0, 1) {
+                        return lang_err!(Expected {
+                            after: slice,
+                            expected: Some(expectation),
+                            but_found: None
+                        });
+                    }
+                    self.analyser.next(0, 1);
+
+                    self.literal()?;
+                    let lexified = self.lexified.pop().unwrap();
+                    self.analyser
+                        .set(slice.range().start..lexified.location().range().end);
+
+                    self.validate_analyser(match lexified.kind() {
+                        Tokens::Literal(Literals::Word | Literals::True | Literals::False)
+                        | Tokens::Keyword(_) => Tokens::ScopeTarget(ScopeTarget::Named(
+                            lexified.location().code().to_string(),
+                        )),
+                        Tokens::Literal(Literals::Number) => {
+                            let num =
+                                NumberRepresentation::from(Token::new(Number, lexified.location()));
+
+                            if num.negative || num.decimal.is_some() || num.integer == 0 {
+                                return lang_err!(Expected {
+                                    after: slice,
+                                    expected: Some(expectation),
+                                    but_found: Some(String::from(
+                                        "a negative and/or decimal-based number"
+                                    ))
+                                });
+                            };
+
+                            Tokens::ScopeTarget(ScopeTarget::Numbered(
+                                NonZero::new(num.integer as usize).unwrap(),
+                            ))
+                        }
+                        _ => {
+                            return lang_err!(Expected {
+                                after: slice,
+                                expected: Some(expectation),
+                                but_found: Some(lexified.location().code().to_string())
+                            });
+                        }
+                    });
+                }
+            }
             "%" => {
                 self.validate_analyser(Tokens::Operator(tokens::Operator::Modulo));
             }
@@ -524,6 +599,9 @@ impl Lexer {
             }
             "," => {
                 self.validate_analyser(Tokens::ArgSeparator);
+            }
+            "#" => {
+                self.validate_analyser(Tokens::Modifier);
             }
             ":" => {
                 let constant = match self.analyser.lookup(0, 1) {

@@ -1,5 +1,9 @@
+use std::num::NonZero;
+
 use crate::flylang::module::slice::LangModuleSlice;
 use enum_variant_type::EnumVariantType;
+
+pub mod representations;
 
 #[derive(Debug, Clone)]
 pub enum Toggleable {
@@ -45,9 +49,15 @@ pub enum Keywords {
     While,
     Until,
     Each,
-    Break,
+    Stop,
     Return,
     Pass,
+}
+
+#[derive(Debug, Clone)]
+pub enum ScopeTarget {
+    Named(std::string::String),
+    Numbered(NonZero<usize>),
 }
 
 #[derive(Debug, Clone)]
@@ -90,9 +100,11 @@ pub enum Tokens {
     Block(Toggleable),
     Object(Toggleable),
     Accessor,
+    Modifier,
     EndOfInstruction,
     ArgSeparator,
     VarDef(VarDefinition),
+    ScopeTarget(ScopeTarget),
 }
 
 #[derive(Debug, Clone)]

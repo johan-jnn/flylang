@@ -1,7 +1,4 @@
-use std::{
-    fmt::{Debug, Display},
-    process::exit,
-};
+use std::fmt::{Debug, Display};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ErrorType {
@@ -39,7 +36,7 @@ pub trait RaisableErr {
         }
         #[cfg(not(debug_assertions))]
         {
-            exit(self._code())
+            std::process::exit(self._code());
         }
     }
     fn raise(&self) -> ! {

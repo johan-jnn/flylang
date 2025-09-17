@@ -26,8 +26,8 @@ This roadmap may change in futur (because I surely forget some features)
 Points ending with `*` means the syntax may change in futur.
 
 - [x] Literals
-- [ ] Scope naming (_`@name (...)`_)
-- [ ] Modifiers (_`#(modifier1, modifier2, ...) fn()`_)
+- [x] Scope naming (_`@name (...)`, `@<+`, `@<integer>`_)
+- [x] Modifiers (_`#(modifier1, modifier2, ...) fn()`_)
 - [ ] Keywords
   - [x] `if`
   - [x] `else`
@@ -35,7 +35,7 @@ Points ending with `*` means the syntax may change in futur.
   - [x] `cs`
   - [ ] `import`\* (_maybe `use` keyword instead ?_)
   - [ ] **Breakers**\*
-    - _Breakers needs to be able to break any above scope but I don't really know the syntax to use (maybe `<breaker-keyword> [@(scope_name | <+)] [value-returned]`. The `<+` means `@<` will be for the above scope, `@<<` = 2 scopes above, `@<<<` 3 scopes above, ...).<br/>
+    - _Breakers needs to be able to break any above scope but I don't really know the syntax to use (maybe `<breaker-keyword> [@(scope_name | <+)] [value-returned]`. The `<+` means `@<` will be for the above scope, `@<<` = `@2` = 2 scopes above, `@<<<` = `@3` = 3 scopes above, ...).<br/>
       The problem using a such syntax, is that I need to allow value returning for `if` and loops blocks (like rust does). But this will lead to a very different syntax that I imagined for the language._
     - [ ] `stop` (_this handles `return` and `break`_)
     - [ ] `pass` (_this also handles `continue`_)
@@ -63,6 +63,8 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Loops
 - [x] Objects (_unstable_)
 - [x] Arrays
+- [ ] Scope naming
+- [ ] Modifiers
 
 ## Syntax
 
