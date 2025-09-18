@@ -514,6 +514,8 @@ impl Lexer {
                 // @<varname-like>
                 // or
                 // @<+
+                // or
+                // @-<number>
                 let mut amount: Option<NonZero<usize>> = None;
                 while let Some(slice) = self.analyser.lookup(0, 1) {
                     if slice[0].code() == '<' {
@@ -532,7 +534,7 @@ impl Lexer {
                 if let Some(amount) = amount {
                     self.validate_analyser(Tokens::ScopeTarget(ScopeTarget::Numbered(amount)));
                 } else {
-                    let expectation = String::from("multiple '<', an integer > 0 or a word");
+                    let expectation = String::from("multiple '<', an integer < 0 or a word");
 
                     // handle as a variable
                     if !self.analyser.able_to(0, 1) {
@@ -558,7 +560,7 @@ impl Lexer {
                             let num =
                                 NumberRepresentation::from(Token::new(Number, lexified.location()));
 
-                            if num.negative || num.decimal.is_some() || num.integer == 0 {
+                            if !num.negative || num.decimal.is_some() || num.integer == 0 {
                                 return lang_err!(Expected {
                                     after: slice,
                                     expected: Some(expectation),
