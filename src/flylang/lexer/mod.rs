@@ -67,6 +67,7 @@ impl Lexer {
         self.validate_analyser(match self.get_slice().code() {
             "fn" => Tokens::Keyword(tokens::Keywords::Fn),
             "cs" => Tokens::Keyword(tokens::Keywords::Cs),
+            "kind" => Tokens::Keyword(tokens::Keywords::Kind),
 
             "while" => Tokens::Keyword(tokens::Keywords::While),
             "until" => Tokens::Keyword(tokens::Keywords::Until),

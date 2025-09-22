@@ -43,12 +43,16 @@ pub enum Literals {
 #[derive(Debug, Clone)]
 pub enum Keywords {
     Fn,
-    If,
     Cs,
+    Kind,
+    
+    If,
     Else,
+    
     While,
     Until,
     Each,
+
     Stop,
     Return,
     Pass,

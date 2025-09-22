@@ -25,25 +25,20 @@ This roadmap may change in futur (because I surely forget some features)
 
 Points ending with `*` means the syntax may change in futur.
 
-- [x] Literals
-- [x] Scope naming (_`@name (...)`, `@<+`, `@<integer>`_)
+- [x] Literals (tuples ?)
+- [x] Scope naming (_`@name (...)`, `@<+`, `@<negative-integer>`_)
 - [x] Modifiers (_`#(modifier1, modifier2, ...) fn()`_)
+- [ ] Typing syntax
 - [ ] Keywords
   - [x] `if`
   - [x] `else`
   - [x] `fn`
   - [x] `cs`
-  - [ ] `import`\* (_maybe `use` keyword instead ?_)
+  - [ ] `use`\* (_`use <module> [only x,y,...] [in <variable>]` - By just using `use <mod>`, all elements in `<mod>` will be global_)
   - [ ] **Breakers**\*
-    - _Breakers needs to be able to break any above scope but I don't really know the syntax to use (maybe `<breaker-keyword> [@(scope_name | <+)] [value-returned]`. The `<+` means `@<` will be for the above scope, `@<<` = `@2` = 2 scopes above, `@<<<` = `@3` = 3 scopes above, ...).<br/>
-      The problem using a such syntax, is that I need to allow value returning for `if` and loops blocks (like rust does). But this will lead to a very different syntax that I imagined for the language._
-    - [ ] `stop` (_this handles `return` and `break`_)
-    - [ ] `pass` (_this also handles `continue`_)
-  - [ ] **Better breakers (?)**\*
-    - _Note: in `if/else` statements, breakers' scope target are default to `@<`_
-    - [ ] `stop [@scope?]` : go out of the scope (_this is used like `break` or `return ()`_)
-    - [ ] `return [@scope?] [value?]` : stop the execution of a function and return a possible value (_only available with functions_)
-    - [ ] `pass [@scope?]` : go to the end of the scope (_works like `return ()`, `continue` and `pass`._)
+    - [ ] `stop [@loop-scope?]` : stop (like _"break"_) a loop
+    - [ ] `return [@fn-scope?] [value?]` : return value to a function (default value too `()`)
+    - [ ] `pass [@scope?]` : pass a scope (go the the end of it). This can be used to pass an `if` block, or to reloop
 - [x] Loops (_`while`, `until` & `each`_)
 - [x] Operations (_`+`, `-`, `_`, `\*\*`, `/`, `//`, `%`, `&`(and), `?`(or), `~`(xor), `=`(equal), `<`, `>`\_)
 - [x] Variable declarations (_`:`, `::`_)
@@ -65,6 +60,8 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Arrays
 - [ ] Scope naming
 - [ ] Modifiers
+- [ ] Single expression function as lambda (ex: `fn foo(true)` will always return `true` (and not `()`) because it has only 1 instruction. To avoid this, use `fn foo(true; ())`)
+- [ ] Kinds (aka _traits_) (_`kind <name>(<required-traits>..., <class-kind syntax>)`_)
 
 ## Syntax
 

@@ -1,25 +1,15 @@
-list: (1..=255).array();
-first_dividable_by_3: find(list, fn(item, item % 3 = 0));
+kind Dividable(
+  #(private, readonly)
+  fn get_num -> num()
 
-|| Rust version :
-fn find<T>(items: Vec<T>, predicate: (T) -> bool) -> T {
-  let check = |item: T| predicate(T) 
+  fn multiple_of(num n, me.num() % n = 0)
+)
 
-  for item in items {
-    if(check(item)) return item
-  }
-
-  println!("Item with predicate {:?} has not been found in {:?}.", predicate, items);
-  std::process:kill(1);
-}
-
-|| Flylang version :
-fn find<T> -> T @scope(items::T{}, predicate::fn(T,bool): fn(_, false),
-  fn check(item::T, 
-    if(predicate(item), return @-1 item)
+fn
+<T: Dividable>
+mystere -> int({T} arr: {},
+  each(arr, item, index,
+    if(item.multiple_of(3), return @mystere index)
   )
-
-  each(items, item, check(item))
-
-  std.process.kill(1, "Item with predicate &(predicate) has not been found in &(items).")
+  return -1
 )
