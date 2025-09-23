@@ -1,4 +1,4 @@
-kind Dividable(
+|kind Dividable(
   #(private, readonly)
   fn get_num -> num()
 
@@ -12,4 +12,4 @@ mystere -> int({T} arr: {},
     if(item.multiple_of(3), return @mystere index)
   )
   return -1
-)
+)|

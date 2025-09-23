@@ -26,7 +26,7 @@ This roadmap may change in futur (because I surely forget some features)
 Points ending with `*` means the syntax may change in futur.
 
 - [x] Literals (tuples ?)
-- [x] Scope naming (_`@name (...)`, `@<+`, `@<negative-integer>`_)
+- [x] Scope naming (_`@name (...)`, `@<+`, `@<positive-integer>`_)
 - [x] Modifiers (_`#(modifier1, modifier2, ...) fn()`_)
 - [ ] Typing syntax
 - [ ] Keywords
@@ -35,10 +35,10 @@ Points ending with `*` means the syntax may change in futur.
   - [x] `fn`
   - [x] `cs`
   - [ ] `use`\* (_`use <module> [only x,y,...] [in <variable>]` - By just using `use <mod>`, all elements in `<mod>` will be global_)
-  - [ ] **Breakers**\*
-    - [ ] `stop [@loop-scope?]` : stop (like _"break"_) a loop
-    - [ ] `return [@fn-scope?] [value?]` : return value to a function (default value too `()`)
-    - [ ] `pass [@scope?]` : pass a scope (go the the end of it). This can be used to pass an `if` block, or to reloop
+  - [x] **Breakers**\*
+    - [x] `stop [@loop-scope?]` : stop (like _"break"_) a loop
+    - [x] `return [@fn-scope?] [value?]` : return value to a function (default value too `()`)
+    - [x] `pass [@scope?]` : pass a scope (go the the end of it). This can be used to pass an `if` block, or to reloop
 - [x] Loops (_`while`, `until` & `each`_)
 - [x] Operations (_`+`, `-`, `_`, `\*\*`, `/`, `//`, `%`, `&`(and), `?`(or), `~`(xor), `=`(equal), `<`, `>`\_)
 - [x] Variable declarations (_`:`, `::`_)
@@ -62,6 +62,7 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [ ] Modifiers
 - [ ] Single expression function as lambda (ex: `fn foo(true)` will always return `true` (and not `()`) because it has only 1 instruction. To avoid this, use `fn foo(true; ())`)
 - [ ] Kinds (aka _traits_) (_`kind <name>(<required-traits>..., <class-kind syntax>)`_)
+- [x] Breakers
 
 ## Syntax
 

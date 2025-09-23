@@ -561,7 +561,7 @@ impl Lexer {
                             let num =
                                 NumberRepresentation::from(Token::new(Number, lexified.location()));
 
-                            if !num.negative || num.decimal.is_some() || num.integer == 0 {
+                            if num.negative || num.decimal.is_some() || num.integer == 0 {
                                 return lang_err!(Expected {
                                     after: slice,
                                     expected: Some(expectation),
