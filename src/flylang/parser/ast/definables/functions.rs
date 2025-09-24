@@ -4,7 +4,12 @@ use crate::flylang::{
     module::slice::LangModuleSlice,
     parser::{
         ast::{
-            BoxedBranches, Branches, Node, expressions::Expressions, instructions::Instructions,
+            BoxedBranches, Branches, Node,
+            expressions::Expressions,
+            instructions::{
+                Instructions,
+                breakers::{Break, BreakKind},
+            },
         },
         errors::{Expected, UnableToParse, UnexpectedNode, UnexpectedToken},
         parsable::Parsable,
@@ -74,7 +79,22 @@ impl Parsable for DefineFunction {
             None,
         )?;
 
-        let execution = branches.pop().unwrap();
+        let mut execution = branches.pop().unwrap();
+        if execution.len() == 1 {
+            let instruction = execution[0].clone();
+            if let Instructions::ValueOf(expression) = instruction.kind() {
+                execution = vec![instruction.clone_as(|_, l| {
+                    (
+                        Instructions::Break(Break {
+                            kind: BreakKind::Return(None, Some(Node::new(expression.clone(), &l))),
+                            keyword_location: l.clone(),
+                        }),
+                        l.clone(),
+                    )
+                })]
+            }
+        }
+
         let mut arguments = vec![];
         for nodes in branches {
             if nodes.len() != 1 {
