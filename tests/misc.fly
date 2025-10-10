@@ -13,3 +13,10 @@ mystere -> int({T} arr: {},
   )
   return -1
 )|
+
+fn my_func @main(a, b,
+  fn test(val,
+    return @val if(val, val, false)
+  );
+  return test(a, b);
+)

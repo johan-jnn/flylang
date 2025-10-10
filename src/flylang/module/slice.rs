@@ -22,6 +22,15 @@ impl LangModuleSlice {
             range: 0..0,
         }
     }
+
+    /// Create a new slice with a defined range.
+    /// Panics if the range is not valid
+    pub fn new_with(module: &Rc<LangModule>, range: Range<usize>) -> Self {
+        let mut slice = Self::new(module);
+        slice.set(range);
+        slice
+    }
+
     /// Override the current range.
     /// Panics if the range is not valid.
     pub fn set(&mut self, range: Range<usize>) -> &mut Self {

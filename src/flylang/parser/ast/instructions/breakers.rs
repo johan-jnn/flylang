@@ -1,5 +1,5 @@
 use crate::flylang::{
-    lexer::tokens::{Keywords, ScopeTarget, Toggleable, Token, Tokens},
+    lexer::tokens::{Keywords, ScopeTarget, Toggleable, Tokens},
     module::slice::LangModuleSlice,
     parser::{
         ast::{Node, expressions::Expressions},
@@ -9,9 +9,9 @@ use crate::flylang::{
 
 #[derive(Debug, Clone)]
 pub enum BreakKind {
-    Stop(Option<Token<ScopeTarget>>),
-    Pass(Option<Token<ScopeTarget>>),
-    Return(Option<Token<ScopeTarget>>, Option<Node<Expressions>>),
+    Stop(Option<Node<ScopeTarget>>),
+    Pass(Option<Node<ScopeTarget>>),
+    Return(Option<Node<ScopeTarget>>, Option<Node<Expressions>>),
 }
 
 #[derive(Debug, Clone)]
@@ -43,9 +43,9 @@ impl Parsable for Break {
             let token = slice[0].clone();
 
             match token.kind() {
-                Tokens::ScopeTarget(target) => {
+                Tokens::ScopeTarget(_) => {
                     parser.analyser.next(0, 1);
-                    Some(Token::new(target.clone(), token.location()))
+                    Some(ScopeTarget::parse(parser, None)?)
                 }
                 _ => None,
             }

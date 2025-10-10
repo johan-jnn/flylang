@@ -3,6 +3,7 @@ use crate::flylang::{module::slice::LangModuleSlice, parser::ast::instructions::
 pub mod definables;
 pub mod expressions;
 pub mod instructions;
+pub mod specials;
 
 #[derive(Debug, Clone)]
 pub struct Node<K = Instructions> {

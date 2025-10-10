@@ -34,6 +34,7 @@ Points ending with `*` means the syntax may change in futur.
   - [x] `else`
   - [x] `fn`
   - [x] `cs`
+  - [x] `kind`
   - [ ] `use`\* (_`use <module> [only x,y,...] [in <variable>]` - By just using `use <mod>`, all elements in `<mod>` will be global_)
   - [x] **Breakers**\*
     - [x] `stop [@loop-scope?]` : stop (like _"break"_) a loop
@@ -58,7 +59,7 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Loops
 - [x] Objects (_unstable_)
 - [x] Arrays
-- [ ] Scope naming
+- [x] Scope naming
 - [ ] Modifiers
 - [x] Single expression function as lambda (ex: `fn foo(true)` will always return `true` (and not `()`) because it has only 1 instruction. To avoid this, use `fn foo(true; ())`)
 - [ ] Kinds (aka _traits_) (_`kind <name>(<required-traits>..., <class-kind syntax>)`_)

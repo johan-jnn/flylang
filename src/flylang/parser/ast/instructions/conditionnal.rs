@@ -1,6 +1,6 @@
 use crate::flylang::{
     errors::lang_err,
-    lexer::tokens::{Keywords, Toggleable, Tokens},
+    lexer::tokens::{Keywords, ScopeTarget, Toggleable, Token, Tokens},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
@@ -15,7 +15,7 @@ use crate::flylang::{
 
 #[derive(Debug, Clone)]
 pub enum IfFallBack {
-    Process(Branches),
+    Process(Option<Node<ScopeTarget>>, Branches),
     If(Node<If>),
 }
 
@@ -24,6 +24,7 @@ pub struct If {
     pub condition: Node<Expressions>,
     pub process: BoxedBranches,
     pub fallback: Option<BoxedNode<IfFallBack>>,
+    pub scope_target: Option<Node<ScopeTarget>>,
 }
 
 #[derive(Debug, Clone)]
@@ -52,7 +53,10 @@ impl Parsable for If {
         }
 
         if let Some(slice) = parser.analyser.lookup(0, 1) {
-            if !matches!(slice[0].kind(), Tokens::Block(Toggleable::Openning)) {
+            if !matches!(
+                slice[0].kind(),
+                Tokens::Block(Toggleable::Openning) | Tokens::ScopeTarget(_)
+            ) {
                 return lang_err!(Expected {
                     after: token.location().clone(),
                     expected: Some(String::from("(<condition>, <code>)")),
@@ -65,19 +69,12 @@ impl Parsable for If {
 
         parser.analyser.next(0, 1);
         let openner = parser.analyser.get()[0].clone();
-        // To avoid conflicts, we do not include the openning character before parsed the arguments
-        parser.analyser.next(0, 0);
-        let branches = parser.branches(
-            |_, token| matches!(token.kind(), Tokens::Block(Toggleable::Closing)),
-            |_, token| matches!(token.kind(), Tokens::ArgSeparator),
-            None,
-        )?;
+        let (scope, branches) = parser.scope(None, None, None)?;
 
         let arguments_location =
             LangModuleSlice::from(&vec![openner.location().clone(), parser.analyser_slice()]);
 
         if !(2..=3).contains(&branches.len()) {
-            // todo if 0 : may panic
             return lang_err!(UnableToParse(
                 arguments_location,
                 format!("Expected 2 or 3 arguments. Found {}.", branches.len())
@@ -89,7 +86,7 @@ impl Parsable for If {
             return lang_err!(UnableToParse(
                 arguments_location,
                 format!(
-                    "Unable to condition. Expected 1 expression, but found {}.",
+                    "Unable to validate the condition. Expected 1 expression, but found {}.",
                     condition_instruction.len()
                 )
             ));
@@ -101,6 +98,13 @@ impl Parsable for If {
 
         // The only way a if condition can have 3 arguments is if it is a ternary expression
         if branches.len() == 3 {
+            if let Some(scope) = scope {
+                return lang_err!(UnexpectedToken(Token::new(
+                    Tokens::ScopeTarget(scope.kind().clone()),
+                    scope.location()
+                )));
+            }
+
             let mut yes = None;
             let mut no = None;
 
@@ -171,6 +175,7 @@ impl Parsable for If {
                 condition,
                 process: process.into(),
                 fallback,
+                scope_target: scope,
             }),
             &location,
         ))
@@ -231,7 +236,10 @@ impl Parsable for IfFallBack {
                 let location =
                     LangModuleSlice::from(&vec![token.location().clone(), parser.analyser_slice()]);
 
-                Ok(Node::new(Self::Process(branches[0].clone()), &location))
+                Ok(Node::new(
+                    Self::Process(None, branches[0].clone()),
+                    &location,
+                ))
             }
             _ => {
                 lang_err!(Expected {

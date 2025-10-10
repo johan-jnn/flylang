@@ -45,10 +45,10 @@ pub enum Keywords {
     Fn,
     Cs,
     Kind,
-    
+
     If,
     Else,
-    
+
     While,
     Until,
     Each,

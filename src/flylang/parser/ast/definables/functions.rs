@@ -1,6 +1,6 @@
 use crate::flylang::{
     errors::lang_err,
-    lexer::tokens::{Keywords, Literals, Toggleable, Tokens, Word},
+    lexer::tokens::{Keywords, Literals, ScopeTarget, Toggleable, Tokens, Word},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
@@ -21,6 +21,7 @@ pub struct DefineFunction {
     pub name: Option<Node<Word>>,
     pub arguments: BoxedBranches<Word>,
     pub execution: Branches,
+    pub scope_target: Option<Node<ScopeTarget>>,
 }
 
 impl Parsable for DefineFunction {
@@ -67,17 +68,10 @@ impl Parsable for DefineFunction {
 
         parser.analyser.next(0, 1);
         let openner = parser.analyser.get()[0].clone();
-        if !matches!(openner.kind(), Tokens::Block(Toggleable::Openning)) {
+        if !matches!(openner.kind(), Tokens::Block(Toggleable::Openning) | Tokens::ScopeTarget(_)) {
             return lang_err!(UnexpectedToken(openner));
         };
-        parser.analyser.next(0, 0);
-
-        // Parse the arguments (last one is the execution)
-        let mut branches = parser.branches(
-            |_, t| matches!(t.kind(), Tokens::Block(Toggleable::Closing)),
-            |_, t| matches!(t.kind(), Tokens::ArgSeparator),
-            None,
-        )?;
+        let (scope_target, mut branches) = parser.scope(None, None, None)?;
 
         let mut execution = branches.pop().unwrap();
         if execution.len() == 1 {
@@ -127,6 +121,8 @@ impl Parsable for DefineFunction {
                 name,
                 execution,
                 arguments: Box::new(arguments),
+                scope_target: scope_target
+                    .map(|target| Node::new(target.kind().clone(), target.location())),
             },
             &location,
         ))

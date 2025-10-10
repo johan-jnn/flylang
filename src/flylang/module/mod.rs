@@ -2,6 +2,7 @@ use std::{
     ffi::OsStr,
     fmt::{Debug, Display},
     fs::read_to_string,
+    ops::Range,
     path::PathBuf,
     rc::Rc,
 };
@@ -53,6 +54,10 @@ impl LangModule {
     }
     pub fn chars(&self) -> ModIter {
         ModIter::new(&Rc::new(self.clone()))
+    }
+
+    pub fn tail_range(&self) -> Range<usize> {
+        self.code.len()..self.code.len()
     }
 }
 impl Display for LangModule {

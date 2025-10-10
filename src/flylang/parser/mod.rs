@@ -1,14 +1,15 @@
 use std::{collections::HashSet, mem::take, rc::Rc, vec};
 
 use crate::flylang::{
-    errors::LangResult,
+    errors::{LangResult, lang_err},
     lexer::{
         Lexer,
-        tokens::{Token, Tokens},
+        tokens::{ScopeTarget, Toggleable, Token, Tokens},
     },
     module::{LangModule, slice::LangModuleSlice},
     parser::{
-        ast::{Branches, instructions::Instructions},
+        ast::{Branches, Node, instructions::Instructions},
+        errors::Expected,
         mods::ParserBehaviors,
         parsable::Parsable,
     },
@@ -27,6 +28,8 @@ pub struct Parser {
     parsed: Branches,
     behaviors: HashSet<ParserBehaviors>,
 }
+// ? only used in the `scope` method
+type ScopeTokenMatcher = Box<dyn Fn(&Parser, &Token) -> bool>;
 
 impl Parser {
     /// Create a new `Parser`
@@ -57,6 +60,102 @@ impl Parser {
             .collect();
 
         LangModuleSlice::from(&slices)
+    }
+
+    /// Parse the next tokens as a scope.
+    ///
+    /// # Panics
+    /// - If the length of the analyser, when calling this method, is > 1
+    ///
+    /// # Predictive return of `Err`
+    /// - If the next instructions are not a new scope (`[@scope?](...)`)
+    ///
+    /// # Parameters
+    /// Under the hood, this method uses the `branches` method. So to have more informations about the following parameters,
+    /// see the `branches` method documentation.
+    /// Only the default parameters' value are documented here, because the arguments are the same as the `branches` method.
+    ///
+    /// - `force_stop` -> `fn(_, token) => token == ')'`
+    /// - `splitted_by` -> `fn(_, token) => token == ','`
+    /// - `persistant_behaviors` -> `vec![]`
+    ///
+    /// # Analyser behavior
+    /// If the result is valid, the analyser range is set from the openning scope character (`(`) to the character that closed it
+    /// (it can be the end of the file, but in most cases it will be the closing scope character (`)`)).
+    fn scope(
+        &mut self,
+        force_stop: Option<ScopeTokenMatcher>,
+        splitted_by: Option<ScopeTokenMatcher>,
+        persistant_behaviors: Option<Option<Vec<ParserBehaviors>>>,
+    ) -> LangResult<(Option<Node<ScopeTarget>>, Vec<Branches>)> {
+        assert!(self.analyser.range().len() <= 1);
+
+        if !(self.analyser.min_len(1)
+            && matches!(
+                self.analyser.get()[0].kind(),
+                Tokens::ScopeTarget(_) | Tokens::Block(Toggleable::Openning)
+            ))
+        {
+            return lang_err!(Expected {
+                after: if self.analyser.range().is_empty() {
+                    LangModuleSlice::new_with(self.module(), self.module().tail_range())
+                } else {
+                    self.analyser_slice()
+                },
+                expected: Some("'(' or '@scope ('".to_string()),
+                but_found: None
+            });
+        }
+
+        let analysing_token = self.analyser.get()[0].clone();
+        let scope = if let Tokens::ScopeTarget(_) = analysing_token.kind() {
+            let target = ScopeTarget::parse(self, None)?.expect_definition()?.clone();
+
+            if let Some(slice) = self.analyser.lookup(0, 1) {
+                if !matches!(slice[0].kind(), Tokens::Block(Toggleable::Openning)) {
+                    return lang_err!(Expected {
+                        after: target.location().clone(),
+                        expected: Some("'('".to_string()),
+                        but_found: Some(slice[0].location().code().to_string())
+                    });
+                }
+                self.analyser.next(0, 1);
+            } else {
+                return lang_err!(Expected {
+                    after: LangModuleSlice::new_with(self.module(), self.module().tail_range()),
+                    expected: Some("'('".to_string()),
+                    but_found: None
+                });
+            };
+
+            Some(target)
+        } else {
+            None
+        };
+
+        let openning_at = self.analyser.range().start;
+        self.analyser.next(0, 0);
+
+        let branches = self.branches(
+            |p, t| {
+                if let Some(f) = &force_stop {
+                    f(p, t)
+                } else {
+                    matches!(t.kind(), Tokens::Block(Toggleable::Closing))
+                }
+            },
+            |p, t| {
+                if let Some(f) = &splitted_by {
+                    f(p, t)
+                } else {
+                    matches!(t.kind(), Tokens::ArgSeparator)
+                }
+            },
+            persistant_behaviors.unwrap_or(Some(vec![])),
+        )?;
+        self.analyser.set(openning_at..self.analyser.range().end);
+
+        Ok((scope, branches))
     }
 
     /// Parse multiple instructions, and ends if the `force_stop` function returns `true` or the analyser stream is finished.

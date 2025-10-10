@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use crate::flylang::{
     errors::lang_err,
-    lexer::tokens::{Keywords, Literals, Toggleable, Tokens, Word},
+    lexer::tokens::{Keywords, Literals, ScopeTarget, Tokens, Word},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
@@ -13,7 +13,7 @@ use crate::flylang::{
             },
             instructions::Instructions,
         },
-        errors::{Expected, UnableToParse, UnexpectedNode, UnexpectedToken},
+        errors::{UnableToParse, UnexpectedNode, UnexpectedToken},
         parsable::Parsable,
     },
 };
@@ -28,6 +28,7 @@ pub enum LoopParameter {
 pub struct Loop {
     pub parameter: LoopParameter,
     pub process: BoxedBranches,
+    pub scope_target: Option<Node<ScopeTarget>>,
 }
 
 #[derive(Debug, Clone)]
@@ -63,36 +64,13 @@ impl Parsable for Loop {
             return lang_err!(UnexpectedToken(token));
         };
 
-        let openner = if let Some(slice) = parser.analyser.lookup(0, 1) {
-            let openner = slice[0].clone();
-            if matches!(openner.kind(), Tokens::Block(Toggleable::Openning)) {
-                parser.analyser.next(0, 1);
-                openner
-            } else {
-                return lang_err!(Expected {
-                    after: token.location().clone(),
-                    expected: Some(String::from("(")),
-                    but_found: Some(openner.location().code().to_string())
-                });
-            }
-        } else {
-            return lang_err!(Expected {
-                after: token.location().clone(),
-                but_found: None,
-                expected: Some(String::from("("))
-            });
-        };
-
         // skip the openner
         parser.analyser.next(0, 0);
-        let mut branches = VecDeque::from(parser.branches(
-            |_, token| matches!(token.kind(), Tokens::Block(Toggleable::Closing)),
-            |_, token| matches!(token.kind(), Tokens::ArgSeparator),
-            None,
-        )?);
 
-        let scope_slice =
-            LangModuleSlice::from(&vec![openner.location().clone(), parser.analyser_slice()]);
+        let (target_scope, branches_vec) = parser.scope(None, None, None)?;
+        let mut branches = VecDeque::from(branches_vec);
+
+        let scope_slice = parser.analyser_slice();
 
         // The only difference between an "each" loop and "while"/"until" loops (in the ast) is that the "each" loops accept a "current-item" argument.
         // So because the syntax is similar, we parse them in the same way.
@@ -198,6 +176,8 @@ impl Parsable for Loop {
             Self {
                 parameter,
                 process: branches.pop_front().unwrap().into(),
+                scope_target: target_scope
+                    .map(|target| Node::new(target.kind().clone(), target.location())),
             },
             &LangModuleSlice::from(&vec![token.location().clone(), parser.analyser_slice()]),
         ))
