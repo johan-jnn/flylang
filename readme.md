@@ -65,6 +65,14 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [ ] Kinds (aka _traits_) (_`kind <name>(<required-traits>..., <class-kind syntax>)`_)
 - [x] Breakers
 
+### Analyser
+
+TODO
+
+### Optimizer
+
+TODO
+
 ## Syntax
 
 The goal of this language is to have a very minimalist syntax while being very powerful.
