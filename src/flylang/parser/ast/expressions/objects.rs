@@ -1,6 +1,6 @@
 use crate::flylang::{
     errors::{LangResult, RaisableErr, lang_err},
-    lexer::tokens::{Literals, Toggleable, Tokens, VarDefinition},
+    lexer::tokens::{Toggleable, Tokens, VarDefinition},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
@@ -9,7 +9,7 @@ use crate::flylang::{
                 Definables,
                 variables::{DefineVariable, VariableEmplacements},
             },
-            expressions::Expressions,
+            expressions::{Expressions, literals::ParsedLiterals},
             instructions::Instructions,
         },
         errors::{UnableToParse, UnexpectedNode, UnexpectedToken},
@@ -46,7 +46,7 @@ impl TryFrom<&DefineVariable> for StructureEntry {
                     value.emplacement.location()
                 )));
             }
-            VariableEmplacements::Scope => Expressions::Literal(Literals::Word),
+            VariableEmplacements::Scope => Expressions::Literal(ParsedLiterals::Word),
             VariableEmplacements::Any(expr) => expr.as_ref().clone(),
         };
 

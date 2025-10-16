@@ -1,12 +1,13 @@
 use crate::flylang::{
     errors::lang_err,
-    lexer::tokens::{Literals, Tokens, VarDefinition},
+    lexer::tokens::{Tokens, VarDefinition},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
             BoxedNode, Node,
             expressions::{
                 Expressions,
+                literals::ParsedLiterals,
                 operations::{Operation, Operations},
                 property::ReadProperty,
             },
@@ -69,7 +70,7 @@ impl Parsable for DefineVariable {
                 .contains(&ParserBehaviors::AllowAnyVariableEmplacement(false));
 
         let emplacement = match emplacement_expression {
-            Expressions::Literal(Literals::Word) => VariableEmplacements::Scope,
+            Expressions::Literal(ParsedLiterals::Word) => VariableEmplacements::Scope,
             Expressions::Read(property) => VariableEmplacements::Property(property.clone()),
             _ => {
                 if allow_any {

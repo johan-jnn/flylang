@@ -1,7 +1,6 @@
 use std::num::NonZero;
 
 use crate::flylang::module::slice::LangModuleSlice;
-use enum_variant_type::EnumVariantType;
 
 pub mod representations;
 
@@ -24,19 +23,13 @@ pub enum StringItem {
     Expression(Box<Vec<Token<Tokens>>>),
 }
 
-#[derive(Debug, Clone, EnumVariantType)]
+#[derive(Debug, Clone)]
 pub enum Literals {
-    #[evt(derive(Debug, Clone))]
     Word,
-    #[evt(derive(Debug, Clone))]
     True,
-    #[evt(derive(Debug, Clone))]
     False,
-    #[evt(derive(Debug, Clone))]
     Number,
-    #[evt(derive(Debug, Clone))]
     Empty,
-    #[evt(derive(Debug, Clone))]
     String(Vec<Token<StringItem>>),
 }
 

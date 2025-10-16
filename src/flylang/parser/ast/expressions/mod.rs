@@ -1,6 +1,6 @@
 use crate::flylang::{
     errors::lang_err,
-    lexer::tokens::{Keywords, Literals, Operator, Toggleable, Tokens},
+    lexer::tokens::{Keywords, Operator, Toggleable, Tokens},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
@@ -8,6 +8,8 @@ use crate::flylang::{
             definables::Definables,
             expressions::{
                 call::Call,
+                literals::ParsedLiterals,
+                modified::ModifiedDefinable,
                 objects::{Array, PrimaryObject, Structure},
                 operations::Operations,
                 property::ReadProperty,
@@ -23,6 +25,8 @@ use crate::flylang::{
 };
 
 pub mod call;
+pub mod literals;
+pub mod modified;
 pub mod objects;
 pub mod operations;
 pub mod property;
@@ -31,7 +35,7 @@ pub mod ternary;
 
 #[derive(Debug, Clone)]
 pub enum Expressions {
-    Literal(Literals),
+    Literal(ParsedLiterals),
     Defined(Definables),
     Read(ReadProperty),
     ReturnOf(Call),
@@ -41,6 +45,7 @@ pub enum Expressions {
     Ternary(Ternary),
     Structure(Structure),
     Array(Array),
+    Modifed(ModifiedDefinable),
 }
 
 impl Expressions {
@@ -67,12 +72,13 @@ impl Parsable for Expressions {
         let token = parser.analyser.get()[0].clone();
 
         let node = match token.kind() {
-            Tokens::Literal(l) => {
-                if previous.is_some() {
-                    return lang_err!(UnexpectedToken(token));
-                }
-
-                Node::new(Expressions::Literal(l.clone()), token.location())
+            Tokens::Literal(_) => {
+                let literal = ParsedLiterals::parse(parser, previous)?;
+                literal.clone_as(|k, l| (Self::Literal(k), l))
+            }
+            Tokens::Modifier => {
+                let modified = ModifiedDefinable::parse(parser, previous)?;
+                modified.clone_as(|k, l| (Self::Modifed(k), l))
             }
             Tokens::VarDef(_) | Tokens::Keyword(Keywords::Fn) => {
                 let defined = Definables::parse(parser, previous)?;
@@ -191,7 +197,7 @@ impl Parsable for Expressions {
                         Tokens::Block(Toggleable::Closing)
                     ) {
                         Node::new(
-                            Self::Literal(Literals::Empty),
+                            Self::Literal(ParsedLiterals::Empty),
                             &LangModuleSlice::from(&vec![
                                 token.location().clone(),
                                 parser.analyser_slice(),

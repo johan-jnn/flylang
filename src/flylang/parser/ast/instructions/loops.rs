@@ -2,13 +2,14 @@ use std::collections::VecDeque;
 
 use crate::flylang::{
     errors::lang_err,
-    lexer::tokens::{Keywords, Literals, ScopeTarget, Tokens, Word},
+    lexer::tokens::{Keywords, ScopeTarget, Tokens},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
             BoxedBranches, BoxedNode, Node,
             expressions::{
                 Expressions,
+                literals::{ParsedLiterals, Word},
                 reverse::{Reverse, ReverseKind},
             },
             instructions::Instructions,
@@ -123,7 +124,7 @@ impl Parsable for Loop {
             }
             if !matches!(
                 element_instruction[0].kind(),
-                Instructions::ValueOf(Expressions::Literal(Literals::Word))
+                Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Word))
             ) {
                 return lang_err!(UnexpectedNode(element_instruction[0].clone()));
             }

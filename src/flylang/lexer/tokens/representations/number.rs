@@ -1,6 +1,6 @@
 use std::mem::take;
 
-use crate::flylang::lexer::tokens::{Number, Token};
+use crate::flylang::{lexer::tokens::Token, parser::ast::expressions::literals::Number};
 
 pub enum NumberRepresentationBases {
     Binary,

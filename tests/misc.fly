@@ -14,9 +14,14 @@ mystere -> int({T} arr: {},
   return -1
 )|
 
-fn my_func @main(a, b,
-  fn test(val,
-    return @val if(val, val, false)
-  );
-  return test(a, b);
-)
+fn print_result(f, args,
+  std.out("&(f._name)(&(args.join(','))) --> &(f())");
+  ()
+);
+
+#(print_result)
+fn foo(a, b,
+  return a + b
+);
+
+foo(2, 6);

@@ -60,7 +60,7 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Objects (_unstable_)
 - [x] Arrays
 - [x] Scope naming
-- [ ] Modifiers
+- [x] Modifiers
 - [x] Single expression function as lambda (ex: `fn foo(true)` will always return `true` (and not `()`) because it has only 1 instruction. To avoid this, use `fn foo(true; ())`)
 - [ ] Kinds (aka _traits_) (_`kind <name>(<required-traits>..., <class-kind syntax>)`_)
 - [x] Breakers

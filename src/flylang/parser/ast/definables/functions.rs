@@ -1,11 +1,14 @@
 use crate::flylang::{
     errors::lang_err,
-    lexer::tokens::{Keywords, Literals, ScopeTarget, Toggleable, Tokens, Word},
+    lexer::tokens::{Keywords, Literals, ScopeTarget, Toggleable, Tokens},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
             BoxedBranches, Branches, Node,
-            expressions::Expressions,
+            expressions::{
+                Expressions,
+                literals::{ParsedLiterals, Word},
+            },
             instructions::{
                 Instructions,
                 breakers::{Break, BreakKind},
@@ -68,7 +71,10 @@ impl Parsable for DefineFunction {
 
         parser.analyser.next(0, 1);
         let openner = parser.analyser.get()[0].clone();
-        if !matches!(openner.kind(), Tokens::Block(Toggleable::Openning) | Tokens::ScopeTarget(_)) {
+        if !matches!(
+            openner.kind(),
+            Tokens::Block(Toggleable::Openning) | Tokens::ScopeTarget(_)
+        ) {
             return lang_err!(UnexpectedToken(openner));
         };
         let (scope_target, mut branches) = parser.scope(None, None, None)?;
@@ -105,7 +111,7 @@ impl Parsable for DefineFunction {
             let node = &nodes[0];
             if !matches!(
                 node.kind(),
-                Instructions::ValueOf(Expressions::Literal(Literals::Word))
+                Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Word))
             ) {
                 return lang_err!(UnexpectedNode(node.clone()));
             }
