@@ -54,7 +54,8 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Function call
 - [x] Variable declaration
 - [x] Operations and priorities
-- [ ] Class definition/instanciation
+- [x] Class definition
+- [ ] Class instanciation
 - [x] If/else
 - [x] Loops
 - [x] Objects (_unstable_)

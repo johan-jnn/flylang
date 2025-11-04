@@ -14,14 +14,27 @@ mystere -> int({T} arr: {},
   return -1
 )|
 
-fn print_result(f, args,
-  std.out("&(f._name)(&(args.join(','))) --> &(f())");
-  ()
+cs Animal(
+  fn(life,
+    me.life: life;
+  ),
+
+  fn damage(amount,
+    me.life-: amount;
+  );
+
+  fn heal(amount,
+    me.life+: amount;
+  );
 );
 
-#(print_result)
-fn foo(a, b,
-  return a + b
-);
+cs Dog(Animal,
+  fn(name,
+    Animal(300);
+    me.name: name;
+  ),
 
-foo(2, 6);
+  fn present(
+    std.out.push("Hey! I'm &(me.name), with &(me.life)pv.");
+  )
+)

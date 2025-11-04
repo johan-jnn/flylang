@@ -54,7 +54,7 @@ impl Parsable for ReadProperty {
 
         let property = match next.kind() {
             Tokens::Literal(Literals::Number) => Property::Index,
-            Tokens::Literal(Literals::Word) => Property::Key,
+            Tokens::Literal(Literals::Word | Literals::False | Literals::True) => Property::Key,
             Tokens::Block(Toggleable::Openning) => {
                 parser.behaviors.insert(ParserBehaviors::Lazy);
 

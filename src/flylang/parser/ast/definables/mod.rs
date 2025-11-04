@@ -2,12 +2,15 @@ use crate::flylang::{
     errors::lang_err,
     lexer::tokens::{Keywords, Tokens},
     parser::{
-        ast::definables::{functions::DefineFunction, variables::DefineVariable},
+        ast::definables::{
+            class::DefineClass, functions::DefineFunction, variables::DefineVariable,
+        },
         errors::UnexpectedToken,
         parsable::Parsable,
     },
 };
 
+pub mod class;
 pub mod functions;
 pub mod variables;
 
@@ -15,6 +18,7 @@ pub mod variables;
 pub enum Definables {
     Function(DefineFunction),
     Variable(DefineVariable),
+    Class(DefineClass),
 }
 
 impl Parsable for Definables {
@@ -31,6 +35,10 @@ impl Parsable for Definables {
             Tokens::VarDef(_) => {
                 let node = DefineVariable::parse(parser, previous)?;
                 Ok(node.clone_as(|k, l| (Self::Variable(k), l)))
+            }
+            Tokens::Keyword(Keywords::Cs) => {
+                let node = DefineClass::parse(parser, previous)?;
+                Ok(node.clone_as(|k, l| (Self::Class(k), l)))
             }
             Tokens::Keyword(Keywords::Fn) => {
                 let node = DefineFunction::parse(parser, previous)?;

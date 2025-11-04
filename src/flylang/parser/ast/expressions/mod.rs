@@ -80,7 +80,7 @@ impl Parsable for Expressions {
                 let modified = ModifiedDefinable::parse(parser, previous)?;
                 modified.clone_as(|k, l| (Self::Modifed(k), l))
             }
-            Tokens::VarDef(_) | Tokens::Keyword(Keywords::Fn) => {
+            Tokens::VarDef(_) | Tokens::Keyword(Keywords::Fn | Keywords::Cs) => {
                 let defined = Definables::parse(parser, previous)?;
                 defined.clone_as(|k, l| (Self::Defined(k), l))
             }

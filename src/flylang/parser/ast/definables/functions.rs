@@ -23,8 +23,8 @@ use crate::flylang::{
 pub struct DefineFunction {
     pub name: Option<Node<Word>>,
     pub arguments: BoxedBranches<Word>,
-    pub execution: Branches,
     pub scope_target: Option<Node<ScopeTarget>>,
+    pub execution: Branches,
 }
 
 impl Parsable for DefineFunction {
