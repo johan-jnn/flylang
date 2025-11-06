@@ -37,4 +37,6 @@ cs Dog(Animal,
   fn present(
     std.out.push("Hey! I'm &(me.name), with &(me.life)pv.");
   )
-)
+);
+
+my_dog: new Dog(3, 5, true);

@@ -55,7 +55,7 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Variable declaration
 - [x] Operations and priorities
 - [x] Class definition
-- [ ] Class instanciation
+- [x] Class instanciation
 - [x] If/else
 - [x] Loops
 - [x] Objects (_unstable_)
@@ -63,7 +63,6 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Scope naming
 - [x] Modifiers
 - [x] Single expression function as lambda (ex: `fn foo(true)` will always return `true` (and not `()`) because it has only 1 instruction. To avoid this, use `fn foo(true; ())`)
-- [ ] Kinds (aka _traits_) (_`kind <name>(<required-traits>..., <class-kind syntax>)`_)
 - [x] Breakers
 
 ### Analyser

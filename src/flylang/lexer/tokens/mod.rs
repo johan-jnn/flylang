@@ -38,6 +38,7 @@ pub enum Keywords {
     Fn,
     Cs,
     Kind,
+    New,
 
     If,
     Else,

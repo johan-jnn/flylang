@@ -8,6 +8,7 @@ use crate::flylang::{
             definables::Definables,
             expressions::{
                 call::Call,
+                instanciate::ClassInstanciation,
                 literals::ParsedLiterals,
                 modified::ModifiedDefinable,
                 objects::{Array, PrimaryObject, Structure},
@@ -25,6 +26,7 @@ use crate::flylang::{
 };
 
 pub mod call;
+pub mod instanciate;
 pub mod literals;
 pub mod modified;
 pub mod objects;
@@ -46,6 +48,7 @@ pub enum Expressions {
     Structure(Structure),
     Array(Array),
     Modifed(ModifiedDefinable),
+    Instanciate(ClassInstanciation),
 }
 
 impl Expressions {
@@ -94,6 +97,10 @@ impl Parsable for Expressions {
                 };
 
                 Node::new(Self::Ternary(ternary.clone()), instruction.location())
+            }
+            Tokens::Keyword(Keywords::New) => {
+                let instanciation = ClassInstanciation::parse(parser, previous)?;
+                instanciation.clone_as(|k, l| (Self::Instanciate(k), l))
             }
             Tokens::Object(Toggleable::Openning) => {
                 let object = PrimaryObject::parse(parser, previous)?;

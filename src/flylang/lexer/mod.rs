@@ -68,6 +68,7 @@ impl Lexer {
             "fn" => Tokens::Keyword(tokens::Keywords::Fn),
             "cs" => Tokens::Keyword(tokens::Keywords::Cs),
             "kind" => Tokens::Keyword(tokens::Keywords::Kind),
+            "new" => Tokens::Keyword(tokens::Keywords::New),
 
             "while" => Tokens::Keyword(tokens::Keywords::While),
             "until" => Tokens::Keyword(tokens::Keywords::Until),
