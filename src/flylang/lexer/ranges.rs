@@ -5,7 +5,7 @@ pub type CharacterRange = [RangeInclusive<u32>];
 // Numbers
 pub const DECIMAL_RANGES: &CharacterRange = &[0x30..=0x39];
 pub const BINARY_RANGES: &CharacterRange = &[0x30..=0x31];
-pub const HEXADECIMAL_RANGES: &CharacterRange = &[0x30..=0x39, 0x41..=0x5a, 0x61..=0x7a];
+pub const HEXADECIMAL_RANGES: &CharacterRange = &[0x30..=0x39, 0x41..=0x46, 0x61..=0x66];
 
 // Ponctuations
 pub const PONCTUATION_RANGES: &CharacterRange = &[

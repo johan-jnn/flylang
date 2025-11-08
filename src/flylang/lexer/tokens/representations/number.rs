@@ -1,7 +1,14 @@
 use std::mem::take;
 
-use crate::flylang::{lexer::tokens::Token, parser::ast::expressions::literals::Number};
+use crate::flylang::{
+    lexer::{
+        ranges::{BINARY_RANGES, CharacterRange, DECIMAL_RANGES, HEXADECIMAL_RANGES, in_ranges},
+        tokens::Token,
+    },
+    parser::ast::expressions::literals::Number,
+};
 
+#[derive(Debug)]
 pub enum NumberRepresentationBases {
     Binary,
     Decimal,
@@ -15,6 +22,40 @@ impl NumberRepresentationBases {
             Self::Decimal => pow_with(10),
             Self::Hexadecimal => pow_with(16),
         }
+    }
+
+    pub fn range(&self) -> &'static CharacterRange {
+        match self {
+            Self::Binary => BINARY_RANGES,
+            Self::Decimal => DECIMAL_RANGES,
+            Self::Hexadecimal => HEXADECIMAL_RANGES,
+        }
+    }
+
+    pub fn convert_digit(&self, digit: char) -> Option<u64> {
+        if !in_ranges!(self.range(), digit) {
+            return None;
+        };
+
+        Some(match digit {
+            '0' => 0,
+            '1' => 1,
+            '2' => 2,
+            '3' => 3,
+            '4' => 4,
+            '5' => 5,
+            '6' => 6,
+            '7' => 7,
+            '8' => 8,
+            '9' => 9,
+            'a' => 10,
+            'b' => 11,
+            'c' => 12,
+            'd' => 13,
+            'e' => 14,
+            'f' => 15,
+            _ => panic!(),
+        })
     }
 }
 
@@ -69,16 +110,16 @@ impl From<Token<Number>> for NumberRepresentation {
                     base_declarated = true;
                 }
                 '0' => {}
-                '1' => integer += represented_as.multiplier(digit_index),
-                '2' => integer += represented_as.multiplier(digit_index) * 2,
-                '3' => integer += represented_as.multiplier(digit_index) * 3,
-                '4' => integer += represented_as.multiplier(digit_index) * 4,
-                '5' => integer += represented_as.multiplier(digit_index) * 5,
-                '6' => integer += represented_as.multiplier(digit_index) * 6,
-                '7' => integer += represented_as.multiplier(digit_index) * 7,
-                '8' => integer += represented_as.multiplier(digit_index) * 8,
-                '9' => integer += represented_as.multiplier(digit_index) * 9,
-                _ => panic!("{} is not a valid number's digit.", digit),
+                _ => {
+                    let Some(dec_value) = represented_as.convert_digit(digit) else {
+                        panic!(
+                            "{} is not a valid number's digit (at least in base {:?}.).",
+                            digit, represented_as
+                        )
+                    };
+
+                    integer += dec_value * represented_as.multiplier(digit_index);
+                }
             }
         }
 
