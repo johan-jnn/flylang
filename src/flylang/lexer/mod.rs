@@ -84,6 +84,9 @@ impl Lexer {
             "true" => Tokens::Literal(tokens::Literals::True),
             "false" => Tokens::Literal(tokens::Literals::False),
 
+            "use" => Tokens::Keyword(tokens::Keywords::Use),
+            "in" => Tokens::Keyword(tokens::Keywords::In),
+
             _ => Tokens::Literal(tokens::Literals::Word),
         });
     }

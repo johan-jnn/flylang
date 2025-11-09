@@ -27,6 +27,10 @@ pub const VARIABLE_CHARACTER_RANGES: &CharacterRange = &[
     0xa1..=u32::MAX,
 ];
 
+// Packages
+pub const IS_FILE_LOCATION_IF_STARTS_WITH: &CharacterRange =
+    &[0x2e..=0x39, 0x41..=0x5a, 0x61..=0x7a, 0x5f..=0x5f];
+
 // Checker
 macro_rules! in_ranges {
     ($r:expr,$c:expr) => {

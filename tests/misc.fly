@@ -1,3 +1,6 @@
+use "@flymeth/is_true" (is_true);
+
+
 |kind Dividable(
   #(private, readonly)
   fn get_num -> num()
@@ -13,30 +16,3 @@ mystere -> int({T} arr: {},
   )
   return -1
 )|
-
-cs Animal(
-  fn(life,
-    me.life: life;
-  ),
-
-  fn damage(amount,
-    me.life-: amount;
-  );
-
-  fn heal(amount,
-    me.life+: amount;
-  );
-);
-
-cs Dog(Animal,
-  fn(name,
-    Animal(300);
-    me.name: name;
-  ),
-
-  fn present(
-    std.out.push("Hey! I'm &(me.name), with &(me.life)pv.");
-  )
-);
-
-my_dog: new Dog(3, 5, true);

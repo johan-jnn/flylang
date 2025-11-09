@@ -1,0 +1,7 @@
+# Depencies folder
+.flydeps
+
+# Environnement variables
+.env
+.env.production
+.env.local

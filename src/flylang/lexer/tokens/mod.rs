@@ -50,6 +50,9 @@ pub enum Keywords {
     Stop,
     Return,
     Pass,
+
+    Use,
+    In,
 }
 
 #[derive(Debug, Clone)]

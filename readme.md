@@ -35,8 +35,8 @@ Points ending with `*` means the syntax may change in futur.
   - [x] `fn`
   - [x] `cs`
   - [x] `kind`
-  - [ ] `use`\* (_`use <module> [only x,y,...] [in <variable>]` - By just using `use <mod>`, all elements in `<mod>` will be global_)
-  - [x] **Breakers**\*
+  - [x] `use` (_`use "<module>" [(x,y,...)] [in <variable>]` - By just using `use <mod>`, all elements in `<mod>` will be global_)
+  - [x] **Breakers**
     - [x] `stop [@loop-scope?]` : stop (like _"break"_) a loop
     - [x] `return [@fn-scope?] [value?]` : return value to a function (default value too `()`)
     - [x] `pass [@scope?]` : pass a scope (go the the end of it). This can be used to pass an `if` block, or to reloop
@@ -64,6 +64,11 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Modifiers
 - [x] Single expression function as lambda (ex: `fn foo(true)` will always return `true` (and not `()`) because it has only 1 instruction. To avoid this, use `fn foo(true; ())`)
 - [x] Breakers
+- [ ] Use
+  - Partially implemented for now
+  - [x] Parsed syntax
+  - [ ] Location resolver
+  - [ ] Imported module
 
 ### Analyser
 

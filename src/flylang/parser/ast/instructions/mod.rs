@@ -8,6 +8,7 @@ use crate::flylang::{
                 breakers::Break,
                 conditionnal::{If, IfResult},
                 loops::Loop,
+                package::Package,
             },
         },
         mods::ParserBehaviors,
@@ -18,6 +19,7 @@ use crate::flylang::{
 pub mod breakers;
 pub mod conditionnal;
 pub mod loops;
+pub mod package;
 
 #[derive(Debug, Clone)]
 pub enum Instructions {
@@ -25,6 +27,7 @@ pub enum Instructions {
     If(If),
     Loop(Loop),
     Break(Break),
+    Use(Package),
 }
 impl Parsable for Instructions {
     type ResultKind = Self;
@@ -52,6 +55,10 @@ impl Parsable for Instructions {
                         result.location(),
                     ),
                 }
+            }
+            Tokens::Keyword(Keywords::Use) => {
+                let package = Package::parse(parser, previous)?;
+                package.clone_as(|k, l| (Self::Use(k), l))
             }
             Tokens::Keyword(Keywords::Each | Keywords::Until | Keywords::While) => {
                 let result = Loop::parse(parser, previous)?;

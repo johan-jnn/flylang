@@ -1,0 +1,14 @@
+[language.config]
+inherits="$(flg config show 'global_config_file_path')"
+
+[package]
+name=""
+description=""
+version="0.0.1-alpha"
+env="developpement"
+
+[package.out_module]
+_="flyinterpreter"
+
+[package.scripts]
+run=""
