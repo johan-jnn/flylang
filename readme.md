@@ -82,3 +82,5 @@ TODO
 
 The goal of this language is to have a very minimalist syntax while being very powerful.
 At this time I'm too busy to re-write a documentation of the language's syntax, so you could go [on my website](https://johan-janin.com/portfolio?open=flylang) to have more informations.
+
+**[A better documentation is currently being written in the `docs` folder of this repository.](./docs/readme.md)**
