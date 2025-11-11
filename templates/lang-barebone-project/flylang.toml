@@ -1,5 +1,6 @@
-[language.config]
-inherits="$(flg config show 'global_config_file_path')"
+extends=[
+  "$HOME/.flylang/flylang.toml"
+]
 
 [package]
 name=""
@@ -7,8 +8,5 @@ description=""
 version="0.0.1-alpha"
 env="developpement"
 
-[package.out_module]
-_="flyinterpreter"
-
 [package.scripts]
-run=""
+run="flylang ./src/entry"

@@ -1,1 +1,16 @@
+# Flylang settings
+[language]
+compiler="flypreter"
+compilers_folders=[
+  "$HOME/.flylang/addons"
+]
+
+[language.dependencies]
+global_folders=[
+  "$HOME/.flylang/.globdeps"
+]
+local_folder="$DIR/.deps"
+
+# List of dependencies for the package
 [package.dependencies]
+"flylang/core" = "1.0.0"
