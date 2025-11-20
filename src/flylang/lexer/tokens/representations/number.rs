@@ -1,11 +1,8 @@
 use std::mem::take;
 
 use crate::flylang::{
-    lexer::{
-        ranges::{BINARY_RANGES, CharacterRange, DECIMAL_RANGES, HEXADECIMAL_RANGES, in_ranges},
-        tokens::Token,
-    },
-    parser::ast::expressions::literals::Number,
+    lexer::ranges::{BINARY_RANGES, CharacterRange, DECIMAL_RANGES, HEXADECIMAL_RANGES, in_ranges},
+    module::slice::LangModuleSlice,
 };
 
 #[derive(Debug)]
@@ -65,12 +62,30 @@ pub struct NumberRepresentation {
     pub decimal: Option<u64>,
     pub represented_as: NumberRepresentationBases,
 }
-impl From<Token<Number>> for NumberRepresentation {
-    fn from(value: Token<Number>) -> Self {
+impl Into<f64> for NumberRepresentation {
+    fn into(self) -> f64 {
+        let mut num = 0f64;
+        num += self.integer as f64;
+
+        num += if let Some(dec) = self.decimal {
+            (dec as f64) / 10f64.powf(dec.to_string().len() as f64)
+        } else {
+            0f64
+        };
+
+        if self.negative {
+            num *= -1f64;
+        }
+        num
+    }
+}
+
+impl From<&LangModuleSlice> for NumberRepresentation {
+    fn from(value: &LangModuleSlice) -> Self {
         let mut integer = 0;
         let mut decimal = None;
         let mut negative = false;
-        let code = value.location().code();
+        let code = value.code();
 
         let represented_as = if code.starts_with("0b") {
             NumberRepresentationBases::Binary

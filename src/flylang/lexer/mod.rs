@@ -10,7 +10,7 @@ use crate::{
             },
         },
         module::{LangModule, char::LangModuleChar, slice::LangModuleSlice},
-        parser::{ast::expressions::literals::Number, errors::Expected},
+        parser::errors::Expected,
         utils::{analyser::Analyser, scoper::Scope},
     },
     utils::macros::empty_result,
@@ -562,8 +562,7 @@ impl Lexer {
                             lexified.location().code().to_string(),
                         )),
                         Tokens::Literal(Literals::Number) => {
-                            let num =
-                                NumberRepresentation::from(Token::new(Number, lexified.location()));
+                            let num = NumberRepresentation::from(lexified.location());
 
                             if num.negative || num.decimal.is_some() || num.integer == 0 {
                                 return lang_err!(Expected {

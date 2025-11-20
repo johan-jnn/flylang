@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 either = "1.15.0"
 enum_variant_type = "0.3.1"
+toml = "0.9.8"

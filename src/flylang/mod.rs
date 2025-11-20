@@ -26,6 +26,24 @@ impl FlyLang {
         {
             dbg!(&lexer.lexify());
         }
+        lexer.lexify();
+
+        Parser::from(&mut lexer)
+    }
+
+    pub fn anonymous_module(script: &str, label: Option<&str>) -> LangModule {
+        LangModule::new_from_raw(script.to_string(), label.unwrap_or("anonymous"))
+    }
+    pub fn anonymous_lexer(script: &str, label: Option<&str>) -> Lexer {
+        Lexer::new(&Rc::new(Self::anonymous_module(script, label)))
+    }
+    pub fn anonymous_parser(script: &str, label: Option<&str>) -> Parser {
+        let mut lexer = Self::anonymous_lexer(script, label);
+        #[cfg(debug_assertions)]
+        {
+            dbg!(&lexer.lexify());
+        }
+        lexer.lexify();
 
         Parser::from(&mut lexer)
     }

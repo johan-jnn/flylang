@@ -16,3 +16,5 @@ mystere -> int({T} arr: {},
   )
   return -1
 )|
+
+cs MyClass();

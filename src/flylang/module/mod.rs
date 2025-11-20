@@ -41,6 +41,13 @@ impl LangModule {
             path,
         })
     }
+    pub fn new_from_raw(script: String, label: &str) -> Self {
+        Self {
+            code: script,
+            path: PathBuf::from(format!("<{}>", label)),
+        }
+    }
+
     pub fn into_rc(self) -> Rc<Self> {
         Rc::new(self)
     }

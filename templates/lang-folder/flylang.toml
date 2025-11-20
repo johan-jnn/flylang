@@ -2,14 +2,14 @@
 [language]
 compiler="flypreter"
 compilers_folders=[
-  "$HOME/.flylang/addons"
+  "$FLYLANG/addons"
 ]
 
 [language.dependencies]
 global_folders=[
-  "$HOME/.flylang/.globdeps"
+  "$FLYLANG/.globdeps"
 ]
-local_folder="$DIR/.deps"
+local_folder="$CWD/.deps"
 
 # List of dependencies for the package
 [package.dependencies]
