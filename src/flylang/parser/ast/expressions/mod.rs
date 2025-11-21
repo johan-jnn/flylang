@@ -166,13 +166,18 @@ impl Parsable for Expressions {
                         invert.location().clone(),
                     ]);
 
-                    Node::new(
-                        Self::Reverse(Reverse {
-                            kind: ReverseKind::Sign,
-                            expression: invert.into(),
-                        }),
-                        &location,
-                    )
+                    // If the inversed element is a number, then merge the number and the sign into one single number
+                    if matches!(invert.kind(), Expressions::Literal(ParsedLiterals::Number)) {
+                        invert.clone_as(|k, _| (k, location.clone()))
+                    } else {
+                        Node::new(
+                            Self::Reverse(Reverse {
+                                kind: ReverseKind::Sign,
+                                expression: invert.into(),
+                            }),
+                            &location,
+                        )
+                    }
                 } else {
                     let operation = Operations::parse(parser, previous)?;
                     operation.clone_as(|k, l| {

@@ -366,34 +366,32 @@ impl Lexer {
 
                     must_followed_by_numeric = true;
                 }
-                'b' | 'x' => {
-                    if !(allow_base_change
-                        && !self.analyser.range().is_empty()
-                        && self.get_slice().code().replace(['0', '-'], "").is_empty())
-                    {
-                        return lang_err!(UnexpectedCharacter(
-                            LangModuleSlice::from(&modchar).into(),
-                            Some("[0-9._-]")
-                        ));
-                    }
-
-                    allow_base_change = false;
-                    allow_float = false;
-                    must_followed_by_numeric = true;
-
-                    numeric_ranges.replace(match modchar.code() {
-                        'b' => ranges::BINARY_RANGES,
-                        'x' => ranges::HEXADECIMAL_RANGES,
-                        _ => &numeric_ranges.borrow(),
-                    });
-                }
                 code => {
-                    if code.is_whitespace() || ranges::in_ranges!(ranges::PONCTUATION_RANGES, code)
+                    // Base changeing
+                    if allow_base_change && matches!(code, 'b' | 'x') {
+                        if self.analyser.range().is_empty()
+                            || !self.get_slice().code().replace(['0', '-'], "").is_empty()
+                        {
+                            return lang_err!(UnexpectedCharacter(
+                                LangModuleSlice::from(&modchar).into(),
+                                Some("[0-9._-]")
+                            ));
+                        }
+
+                        allow_base_change = false;
+                        allow_float = false;
+                        must_followed_by_numeric = true;
+
+                        numeric_ranges.replace(match modchar.code() {
+                            'b' => ranges::BINARY_RANGES,
+                            'x' => ranges::HEXADECIMAL_RANGES,
+                            _ => &numeric_ranges.borrow(),
+                        });
+                    } else if code.is_whitespace()
+                        || ranges::in_ranges!(ranges::PONCTUATION_RANGES, code)
                     {
                         break;
-                    }
-
-                    if !is_numeric(code) {
+                    } else if !is_numeric(code) {
                         return lang_err!(UnexpectedCharacter(
                             LangModuleSlice::from(&modchar).into(),
                             Some("[0-9._]")

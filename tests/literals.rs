@@ -2,7 +2,7 @@ use flylang::flylang::FlyLang;
 #[cfg(test)]
 pub mod tests {
     use flylang::flylang::{
-        lexer::tokens::representations::number::NumberRepresentation,
+        lexer::tokens::representations::number::{NumberRepresentation, NumberRepresentationBases},
         parser::ast::{
             expressions::{Expressions, literals::ParsedLiterals},
             instructions::Instructions,
@@ -122,17 +122,117 @@ pub mod tests {
             .parse()
             .to_vec();
 
-        dbg!(&parsed);
         assert_eq!(parsed.len(), 1);
-        // ? The parsed element is a reverse(sign) of number(0.9874)
-        // todo Replace reverse(sign) of number(x) to number(x) with sign
-        // assert!(matches!(
-        //     parsed[0].kind(),
-        //     Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Number))
-        // ));
+        assert!(matches!(
+            parsed[0].kind(),
+            Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Number))
+        ));
 
         let num: f64 = NumberRepresentation::from(parsed[0].location()).into();
         assert_eq!(num, -0.9874f64);
     }
     /* #endregion */
+
+    #[test]
+    fn number_bin() {
+        let parsed = FlyLang::anonymous_parser(r#"0b10110"#, SCRIPTS_LABEL)
+            .parse()
+            .to_vec();
+
+        assert_eq!(parsed.len(), 1);
+        assert!(matches!(
+            parsed[0].kind(),
+            Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Number))
+        ));
+
+        let number = NumberRepresentation::from(parsed[0].location());
+        assert!(matches!(
+            number.represented_as,
+            NumberRepresentationBases::Binary
+        ));
+
+        let value: f64 = number.into();
+        assert_eq!(value, 22f64);
+    }
+
+    #[test]
+    fn number_bin_neg() {
+        let parsed = FlyLang::anonymous_parser(r#"-0b110"#, SCRIPTS_LABEL)
+            .parse()
+            .to_vec();
+
+        assert_eq!(parsed.len(), 1);
+        assert!(matches!(
+            parsed[0].kind(),
+            Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Number))
+        ));
+
+        let value: f64 = NumberRepresentation::from(parsed[0].location()).into();
+        assert_eq!(value, -6f64);
+    }
+
+    #[test]
+    #[should_panic]
+    fn number_bin_invalid_char() {
+        FlyLang::anonymous_parser(r#"0b2"#, SCRIPTS_LABEL).parse();
+        FlyLang::anonymous_parser(r#"0bf"#, SCRIPTS_LABEL).parse();
+        FlyLang::anonymous_parser(r#"0b5"#, SCRIPTS_LABEL).parse();
+    }
+
+    #[test]
+    #[should_panic]
+    fn number_bin_decimal_disallowed() {
+        let parsed = FlyLang::anonymous_parser(r#"0b101.101"#, SCRIPTS_LABEL)
+            .parse()
+            .to_vec();
+
+        assert_eq!(parsed.len(), 1);
+        assert!(matches!(
+            parsed[0].kind(),
+            Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Number))
+        ));
+    }
+
+    #[test]
+    fn number_hex() {
+        let parsed = FlyLang::anonymous_parser(r#"0x5FaDef"#, SCRIPTS_LABEL)
+            .parse()
+            .to_vec();
+
+        assert_eq!(parsed.len(), 1);
+        assert!(matches!(
+            parsed[0].kind(),
+            Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Number))
+        ));
+
+        let number = NumberRepresentation::from(parsed[0].location());
+        assert!(matches!(
+            number.represented_as,
+            NumberRepresentationBases::Hexadecimal
+        ));
+
+        let value: f64 = number.into();
+        assert_eq!(value, 6270447f64);
+    }
+
+    #[test]
+    #[should_panic]
+    fn number_hex_invalid_char() {
+        FlyLang::anonymous_parser(r#"0bGu"#, SCRIPTS_LABEL).parse();
+        FlyLang::anonymous_parser(r#"0b5n"#, SCRIPTS_LABEL).parse();
+    }
+
+    #[test]
+    #[should_panic]
+    fn number_hex_decimal_disallowed() {
+        let parsed = FlyLang::anonymous_parser(r#"0xeff.a55"#, SCRIPTS_LABEL)
+            .parse()
+            .to_vec();
+
+        assert_eq!(parsed.len(), 1);
+        assert!(matches!(
+            parsed[0].kind(),
+            Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Number))
+        ));
+    }
 }

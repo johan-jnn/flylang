@@ -34,7 +34,7 @@ impl NumberRepresentationBases {
             return None;
         };
 
-        Some(match digit {
+        Some(match digit.to_ascii_lowercase() {
             '0' => 0,
             '1' => 1,
             '2' => 2,
@@ -51,11 +51,12 @@ impl NumberRepresentationBases {
             'd' => 13,
             'e' => 14,
             'f' => 15,
-            _ => panic!(),
+            _ => panic!("Invalid number digit {}", digit),
         })
     }
 }
 
+#[derive(Debug)]
 pub struct NumberRepresentation {
     pub negative: bool,
     pub integer: u64,
@@ -82,32 +83,34 @@ impl Into<f64> for NumberRepresentation {
 
 impl From<&LangModuleSlice> for NumberRepresentation {
     fn from(value: &LangModuleSlice) -> Self {
+        let mut code = value.code().trim();
+
         let mut integer = 0;
         let mut decimal = None;
-        let mut negative = false;
-        let code = value.code();
+        let negative = code.starts_with('-');
+
+        if negative {
+            // Remove the '-' sign
+            code = code[1..].trim();
+        }
 
         let represented_as = if code.starts_with("0b") {
+            code = &code[2..];
             NumberRepresentationBases::Binary
         } else if code.starts_with("0x") {
+            code = &code[2..];
             NumberRepresentationBases::Hexadecimal
         } else {
+            if code.starts_with("0d") {
+                code = &code[2..];
+            };
+
             NumberRepresentationBases::Decimal
         };
 
         // Index shifting in case the number is a float
         let mut index_shift = 0;
-        let mut base_declarated = false;
-        for (index, digit) in code.trim().chars().rev().enumerate() {
-            assert!(
-                !negative,
-                "The '-' (negative) symbol is not at the begining of the number."
-            );
-            assert!(
-                !base_declarated || (index == code.len().saturating_sub(1) && digit == '0'),
-                "The base declaration is not well placed."
-            );
-
+        for (index, digit) in code.chars().rev().enumerate() {
             let digit_index = index.saturating_sub(index_shift);
             match digit {
                 '.' => {
@@ -115,14 +118,8 @@ impl From<&LangModuleSlice> for NumberRepresentation {
                     decimal = Some(take(&mut integer));
                     index_shift = index;
                 }
-                '-' => {
-                    negative = true;
-                }
                 '_' => {
                     index_shift += 1;
-                }
-                'x' | 'b' | 'd' => {
-                    base_declarated = true;
                 }
                 '0' => {}
                 _ => {
