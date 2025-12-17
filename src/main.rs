@@ -1,17 +1,9 @@
-use flylang::flylang::{
-    self as lang, FlyLang, lexer::tokens::representations::number::NumberRepresentation,
-};
+use crate::cli::LangCLI;
+use clap::Parser;
+pub mod behavior;
+pub mod cli;
 
 fn main() {
-    let parsed = FlyLang::anonymous_parser(
-        r#"
-    -  0x0bf011
-    "#,
-        None,
-    )
-    .parse()
-    .to_vec();
-
-    let num = NumberRepresentation::from(parsed[0].location());
-    dbg!(num);
+    let config = LangCLI::parse();
+    dbg!(config);
 }
