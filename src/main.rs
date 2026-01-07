@@ -1,9 +1,8 @@
-use crate::cli::LangCLI;
-use clap::Parser;
+use flylang::LangRunner;
 pub mod behavior;
 pub mod cli;
 
 fn main() {
-    let config = LangCLI::parse();
-    dbg!(config);
+    let runner = LangRunner::create();
+    dbg!(runner);
 }
