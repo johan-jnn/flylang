@@ -92,18 +92,17 @@ impl Parsable for PrimaryObject {
             return lang_err!(UnexpectedToken(token));
         }
 
-        if let Some(slice) = parser.analyser.lookup(0, 2) {
-            if matches!(slice[0].kind(), Tokens::VarDef(VarDefinition::Normal))
-                && matches!(slice[1].kind(), Tokens::Object(Toggleable::Closing))
-            {
-                // Empty structure
-                parser.analyser.increase(2);
+        if let Some(slice) = parser.analyser.lookup(0, 2)
+            && matches!(slice[0].kind(), Tokens::VarDef(VarDefinition::Normal))
+            && matches!(slice[1].kind(), Tokens::Object(Toggleable::Closing))
+        {
+            // Empty structure
+            parser.analyser.increase(2);
 
-                return Ok(Node::new(
-                    Self::Struct(Structure { entries: vec![] }),
-                    &parser.analyser_slice(),
-                ));
-            }
+            return Ok(Node::new(
+                Self::Struct(Structure { entries: vec![] }),
+                &parser.analyser_slice(),
+            ));
         };
 
         parser.analyser.next(0, 0);

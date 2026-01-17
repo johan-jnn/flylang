@@ -4,8 +4,8 @@ use clap::Parser;
 
 use crate::{behavior::LangBehavior, cli::LangCLI};
 
-mod behavior;
-mod cli;
+pub mod behavior;
+pub mod cli;
 pub mod flylang;
 pub mod utils;
 

@@ -99,8 +99,8 @@ impl Parsable for Package {
         };
 
         let mut included  = PackageIncludedContent::All;
-        if let Some(next) = parser.analyser.lookup(0, 1) {
-            if matches!(next[0].kind(), Tokens::Block(Toggleable::Openning)) {
+        if let Some(next) = parser.analyser.lookup(0, 1)
+            && matches!(next[0].kind(), Tokens::Block(Toggleable::Openning)) {
                 parser.analyser.next(1, 0);
                 let res = parser.branches(
                     |_, t| matches!(t.kind(), Tokens::Block(Toggleable::Closing)),
@@ -123,20 +123,16 @@ impl Parsable for Package {
                 };
 
                 included = PackageIncludedContent::Only(included_vec);
-            }
-        };
+            };
 
         let mut emplacement = PackageContentEmplacement::Global;
-        if let Some(next) = parser.analyser.lookup(0, 1) {
-            if matches!(next[0].kind(), Tokens::Keyword(Keywords::In)) {
-                if let Some(renext) = parser.analyser.lookup(1, 1) {
-                    if matches!(renext[0].kind(), Tokens::Literal(Literals::Word)) {
+        if let Some(next) = parser.analyser.lookup(0, 1)
+            && matches!(next[0].kind(), Tokens::Keyword(Keywords::In))
+                && let Some(renext) = parser.analyser.lookup(1, 1)
+                    && matches!(renext[0].kind(), Tokens::Literal(Literals::Word)) {
                         emplacement = PackageContentEmplacement::Variable(Node::new(Word, renext[0].location()));
                         parser.analyser.next(0, 2);
                     }
-                }
-            }   
-        }
 
         let location = LangModuleSlice::from(&vec![
             token.location().clone(),

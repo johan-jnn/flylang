@@ -492,11 +492,11 @@ impl Lexer {
             "*" => {
                 let mut operator = tokens::Operator::Multiply;
 
-                if let Some(slice) = self.analyser.lookup(0, 1) {
-                    if slice[0].code() == '*' {
-                        self.analyser.increase(1);
-                        operator = tokens::Operator::Power;
-                    }
+                if let Some(slice) = self.analyser.lookup(0, 1)
+                    && slice[0].code() == '*'
+                {
+                    self.analyser.increase(1);
+                    operator = tokens::Operator::Power;
                 }
 
                 self.validate_analyser(Tokens::Operator(operator));
@@ -504,11 +504,11 @@ impl Lexer {
             "/" => {
                 let mut operator = tokens::Operator::Divide;
 
-                if let Some(slice) = self.analyser.lookup(0, 1) {
-                    if slice[0].code() == '/' {
-                        self.analyser.increase(1);
-                        operator = tokens::Operator::EuclidianDivision;
-                    }
+                if let Some(slice) = self.analyser.lookup(0, 1)
+                    && slice[0].code() == '/'
+                {
+                    self.analyser.increase(1);
+                    operator = tokens::Operator::EuclidianDivision;
                 }
 
                 self.validate_analyser(Tokens::Operator(operator));
@@ -590,11 +590,11 @@ impl Lexer {
                 self.validate_analyser(Tokens::Operator(tokens::Operator::Modulo));
             }
             ";" => {
-                if let Some(last) = self.lexified.last() {
-                    if let Tokens::EndOfInstruction = last.kind() {
-                        // Here we prevent following end of instruction (useless)
-                        self.analyser.next(0, 0);
-                    }
+                if let Some(last) = self.lexified.last()
+                    && let Tokens::EndOfInstruction = last.kind()
+                {
+                    // Here we prevent following end of instruction (useless)
+                    self.analyser.next(0, 0);
                 }
                 // Empty only if the analyser has been nexted (see above).
                 if !self.analyser.range().is_empty() {
@@ -616,33 +616,31 @@ impl Lexer {
                     self.analyser.increase(1);
                 }
 
-                if let Some(previous) = self.lexified.last() {
-                    if let Tokens::Operator(operator) = previous.kind() {
-                        if constant {
-                            return lang_err!(UnexpectedCharacter(
-                                self.get_slice().into(),
-                                Some("<operator>: ...")
-                            ));
-                        }
-                        let kind = Tokens::VarDef(tokens::VarDefinition::WithOperation(
-                            Token::new(operator.clone(), previous.location()),
+                if let Some(previous) = self.lexified.last()
+                    && let Tokens::Operator(operator) = previous.kind()
+                {
+                    if constant {
+                        return lang_err!(UnexpectedCharacter(
+                            self.get_slice().into(),
+                            Some("<operator>: ...")
                         ));
-
-                        // Set the reference to also take the operator
-                        self.analyser.set(
-                            LangModuleSlice::from(&vec![
-                                previous.location().clone(),
-                                self.get_slice(),
-                            ])
-                            .range(),
-                        );
-
-                        // Remove the operation token
-                        self.lexified.pop();
-                        self.validate_analyser(kind);
-
-                        return empty_result::ok!();
                     }
+                    let kind = Tokens::VarDef(tokens::VarDefinition::WithOperation(Token::new(
+                        operator.clone(),
+                        previous.location(),
+                    )));
+
+                    // Set the reference to also take the operator
+                    self.analyser.set(
+                        LangModuleSlice::from(&vec![previous.location().clone(), self.get_slice()])
+                            .range(),
+                    );
+
+                    // Remove the operation token
+                    self.lexified.pop();
+                    self.validate_analyser(kind);
+
+                    return empty_result::ok!();
                 }
 
                 self.validate_analyser(Tokens::VarDef(if constant {
@@ -666,11 +664,11 @@ impl Lexer {
             }
             "<" | ">" => {
                 let mut strict = true;
-                if let Some(next) = self.analyser.lookup(0, 1) {
-                    if next[0].code() == '=' {
-                        strict = false;
-                        self.analyser.increase(1);
-                    }
+                if let Some(next) = self.analyser.lookup(0, 1)
+                    && next[0].code() == '='
+                {
+                    strict = false;
+                    self.analyser.increase(1);
                 }
 
                 self.validate_analyser(Tokens::Comparison(match slice.code() {

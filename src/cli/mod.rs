@@ -36,6 +36,10 @@ pub enum LangCommands {
         #[arg(short, long)]
         directory: Option<String>,
     },
+
+    /// Show the current behaviors of flylang
+    #[command()]
+    Behavior {},
 }
 
 /// Flylang parser.
