@@ -1,5 +1,5 @@
 extends=[
-  "$FLYLANG_FOLDER/flylang.toml"
+  "${FLYLANG}/flylang.toml"
 ]
 
 [package]

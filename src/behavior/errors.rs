@@ -32,6 +32,22 @@ impl RaisableErr for InvalidPath {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct PathNotFound {
+    pub path: PathBuf,
+}
+
+impl RaisableErr for PathNotFound {
+    fn _kind(&self) -> ErrorType {
+        ErrorType::Warn
+    }
+
+    fn _message(&self) -> String {
+        format!("No file found at <{:?}>", self.path)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct InvalidKeyValue {
     pub from_file: PathBuf,
     pub key: String,

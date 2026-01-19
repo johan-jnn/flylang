@@ -1,13 +1,19 @@
 use std::{
     collections::{BTreeSet, HashMap},
-    fs::read_to_string,
+    env,
+    fs::{exists, read_to_string},
     path::{Path, PathBuf},
 };
 use toml::{Table, Value};
 
 use crate::{
-    behavior::errors::{InvalidKeyValue, InvalidPath},
-    flylang::errors::{ErrorType, LangResult, RaisableErr, lang_err},
+    behavior::errors::{InvalidKeyValue, InvalidPath, PathNotFound},
+    flylang::{
+        self,
+        errors::{ErrorType, LangResult, RaisableErr, lang_err},
+        utils,
+    },
+    utils::{env::get_env_hashmap, str::ReplaceByKey},
 };
 pub mod errors;
 
@@ -27,16 +33,23 @@ impl LangBehavior {
         behavior
     }
 
+    fn get_parsed_value(value: &Value) -> Value {
+        match value {
+            Value::String(s) => Value::String(ReplaceByKey::replace(s, get_env_hashmap())),
+            _ => value.clone(),
+        }
+    }
+
     fn handle_extend(&mut self, extend: &Value, file: &PathBuf) -> LangResult<&mut Self> {
-        match extend {
+        match Self::get_parsed_value(extend) {
             Value::String(f) => {
-                self.parse(Path::new(f).into(), Some(file.clone()));
+                self.parse(Path::new(&f).into(), Some(file.clone()));
 
                 Ok(self)
             }
             Value::Array(files) => {
                 for f in files {
-                    self.handle_extend(f, file)?;
+                    self.handle_extend(&f, file)?;
                 }
 
                 Ok(self)
@@ -55,6 +68,11 @@ impl LangBehavior {
     pub fn parse(&mut self, base_file: PathBuf, from: Option<PathBuf>) -> &mut Self {
         if self.processed.contains(&base_file) {
             return self;
+        }
+
+        let path_exist = exists(&base_file);
+        if path_exist.is_err() || path_exist.is_ok_and(|v| !v) {
+            PathNotFound { path: base_file }.raise()
         }
 
         let file_err = InvalidPath {
