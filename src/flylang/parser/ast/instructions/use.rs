@@ -11,8 +11,8 @@ use crate::flylang::{
 
 #[derive(Debug, Clone)]
 pub enum PackageSource {
-    Package,
-    File,
+    Package(String),
+    File(String),
 }
 
 #[derive(Debug, Clone)]
@@ -89,13 +89,13 @@ impl Parsable for Package {
         };
 
         if src_location.is_empty() {
-            return lang_err!(UnableToParse(src_token.location().clone(), "Invalid package path.".into()));
+            return lang_err!(UnableToParse(src_token.location().clone(), "Invalid package path (It must be a string that does not contain expressions).".into()));
         }
 
         let source = if in_ranges!(IS_FILE_LOCATION_IF_STARTS_WITH, src_location.chars().next().unwrap()) {
-            PackageSource::File
+            PackageSource::File(src_location)
         } else {
-            PackageSource::Package
+            PackageSource::Package(src_location)
         };
 
         let mut included  = PackageIncludedContent::All;
@@ -126,13 +126,18 @@ impl Parsable for Package {
             };
 
         let mut emplacement = PackageContentEmplacement::Global;
-        if let Some(next) = parser.analyser.lookup(0, 1)
-            && matches!(next[0].kind(), Tokens::Keyword(Keywords::In))
+        if let Some(next) = parser.analyser.lookup(0, 1){
+            if  matches!(next[0].kind(), Tokens::Keyword(Keywords::In))
                 && let Some(renext) = parser.analyser.lookup(1, 1)
                     && matches!(renext[0].kind(), Tokens::Literal(Literals::Word)) {
                         emplacement = PackageContentEmplacement::Variable(Node::new(Word, renext[0].location()));
                         parser.analyser.next(0, 2);
                     }
+            else if !matches!(next[0].kind(), Tokens::EndOfInstruction) {
+                return lang_err!(UnexpectedToken(next[0].clone()));
+            }
+        }
+
 
         let location = LangModuleSlice::from(&vec![
             token.location().clone(),

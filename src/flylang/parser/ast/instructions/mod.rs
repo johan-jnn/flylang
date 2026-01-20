@@ -8,7 +8,7 @@ use crate::flylang::{
                 breakers::Break,
                 conditionnal::{If, IfResult},
                 loops::Loop,
-                package::Package,
+                r#use::Package,
             },
         },
         mods::ParserBehaviors,
@@ -19,7 +19,7 @@ use crate::flylang::{
 pub mod breakers;
 pub mod conditionnal;
 pub mod loops;
-pub mod package;
+pub mod r#use;
 
 #[derive(Debug, Clone)]
 pub enum Instructions {
