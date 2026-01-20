@@ -1,6 +1,5 @@
 use std::{
-    collections::{BTreeSet, HashMap},
-    env,
+    collections::BTreeSet,
     fs::{exists, read_to_string},
     path::{Path, PathBuf},
 };
@@ -8,11 +7,7 @@ use toml::{Table, Value};
 
 use crate::{
     behavior::errors::{InvalidKeyValue, InvalidPath, PathNotFound},
-    flylang::{
-        self,
-        errors::{ErrorType, LangResult, RaisableErr, lang_err},
-        utils,
-    },
+    flylang::errors::{ErrorType, LangResult, RaisableErr, lang_err},
     utils::{env::get_env_hashmap, str::ReplaceByKey},
 };
 pub mod errors;
@@ -20,7 +15,7 @@ pub mod errors;
 /// This package is used to retreive the language's behavior from .toml files
 #[derive(Debug, Clone, Default)]
 pub struct LangBehavior {
-    map: HashMap<String, Value>,
+    map: Table,
     processed: BTreeSet<PathBuf>,
 }
 
@@ -33,15 +28,32 @@ impl LangBehavior {
         behavior
     }
 
-    fn get_parsed_value(value: &Value) -> Value {
+    fn get_parsed_value(value: &Value, deep_parse: bool) -> Value {
         match value {
             Value::String(s) => Value::String(ReplaceByKey::replace(s, get_env_hashmap())),
+            Value::Array(arr) => Value::Array(
+                arr.iter()
+                    .map(|v| Self::get_parsed_value(v, deep_parse))
+                    .collect(),
+            ),
+            Value::Table(table) => {
+                if deep_parse {
+                    Value::Table(
+                        table
+                            .iter()
+                            .map(|(k, v)| (k.clone(), Self::get_parsed_value(v, deep_parse)))
+                            .collect(),
+                    )
+                } else {
+                    Value::Table(table.clone())
+                }
+            }
             _ => value.clone(),
         }
     }
 
     fn handle_extend(&mut self, extend: &Value, file: &PathBuf) -> LangResult<&mut Self> {
-        match Self::get_parsed_value(extend) {
+        match Self::get_parsed_value(extend, false) {
             Value::String(f) => {
                 self.parse(Path::new(&f).into(), Some(file.clone()));
 
@@ -62,6 +74,29 @@ impl LangBehavior {
 
                 kind: ErrorType::Stop
             }),
+        }
+    }
+
+    fn merge(table: &Table, into: &mut Table, same_does_replace: bool) {
+        for (key, raw_value) in table {
+            let value = Self::get_parsed_value(raw_value, false);
+
+            if !into.contains_key(key) {
+                into.insert(key.clone(), Self::get_parsed_value(raw_value, true));
+                continue;
+            }
+
+            if let Value::Table(table) = &value
+                && let Value::Table(into) = &mut into[key]
+            {
+                Self::merge(table, into, same_does_replace);
+            } else if let Value::Array(brothers) = &value
+                && let Value::Array(family) = &mut into[key]
+            {
+                family.extend(brothers.clone());
+            } else if same_does_replace {
+                into.insert(key.clone(), Self::get_parsed_value(raw_value, true));
+            }
         }
     }
 
@@ -94,9 +129,40 @@ impl LangBehavior {
             e.controlled_raise();
         }
 
-        self.map.extend(data);
+        Self::merge(&data, &mut self.map, true);
         self.processed.insert(base_file);
 
         self
+    }
+
+    // Getters
+
+    /// Get the value of an option defined by its key.
+    /// Note that the key will be splitted by the `.` character
+    /// You can use `.get("*")` to retrive the whole behaviors table
+    pub fn get(&self, accessor: &str) -> Option<Value> {
+        if accessor.is_empty() {
+            return None;
+        }
+
+        let mut result: Option<Value> = Some(Value::Table(self.map.clone()));
+        if accessor.trim() == "*" {
+            return result;
+        }
+
+        let keys = accessor.split('.');
+        for key in keys {
+            let Some(Value::Table(table)) = result else {
+                return None;
+            };
+
+            if !table.contains_key(key) {
+                return None;
+            }
+
+            result = Some(table[key].clone());
+        }
+
+        result
     }
 }

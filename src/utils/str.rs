@@ -10,7 +10,7 @@ impl ReplaceByKey {
     }
 
     fn get_regex() -> Regex {
-        Regex::new(r"(?m)\$(?:(?<KEY>\w+)|(?:\{(?<DELIMITED_KEY>.+?)\}))").unwrap()
+        Regex::new(r"(?m)\$(?:(?<KEY>[\w_]+)|(?:\{(?<DELIMITED_KEY>.+?)\}))").unwrap()
     }
 }
 impl Replacer for ReplaceByKey {

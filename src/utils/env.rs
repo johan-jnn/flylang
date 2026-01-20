@@ -14,3 +14,28 @@ pub fn get_env_hashmap() -> HashMap<String, String> {
 
     map
 }
+
+/// Extend env variables with custom flylang's one
+pub fn extend_env() {
+    let mut extender: HashMap<&str, String> = HashMap::new();
+
+    extender.insert(
+        "CWD",
+        String::from(
+            std::env::current_dir()
+                .expect("Critical error: Unable to read current directory")
+                .to_str()
+                .unwrap(),
+        ),
+    );
+    extender.insert(
+        "FLYLANG_ENV",
+        std::env::var("FLYLANG_ENV").unwrap_or("PROD".to_string()),
+    );
+
+    for (key, value) in extender {
+        unsafe {
+            std::env::set_var(key, value);
+        }
+    }
+}
