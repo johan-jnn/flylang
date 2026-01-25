@@ -263,11 +263,11 @@ impl Parsable for Expressions {
 
         if let Some(slice) = parser.analyser.lookup(0, 1) {
             let kind = slice[0].kind();
-
             // ? Explainations:
-            // If the next token matches an end of instruction
-            // Or we're in lazy-mode and the next token requires a non-lazy mode
-            // Then we do not recurcivly call the parsing method.
+            // In lazy mode, continue parsing only if:
+            // -> Next token mustn't be processed in lazy-mode
+            //
+            // Also, if the next token is an end of instruction, we stop the expression parsing
             if !(matches!(
                 kind,
                 Tokens::Block(Toggleable::Closing)

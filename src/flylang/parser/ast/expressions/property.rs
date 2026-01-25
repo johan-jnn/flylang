@@ -56,9 +56,19 @@ impl Parsable for ReadProperty {
             Tokens::Literal(Literals::Number) => Property::Index,
             Tokens::Literal(Literals::Word | Literals::False | Literals::True) => Property::Key,
             Tokens::Block(Toggleable::Openning) => {
-                parser.behaviors.insert(ParserBehaviors::Lazy);
+                parser.analyser.next(0, 0);
 
-                Property::Expression(Box::new(Expressions::parse(parser, None)?))
+                let keep_lazy = parser.behaviors.contains(&ParserBehaviors::Lazy);
+                parser.behaviors.insert(ParserBehaviors::Lazy);
+                let value = Property::Expression(Box::new(Expressions::parse(parser, None)?));
+
+                parser.analyser.next(0, 1);
+
+                if !keep_lazy {
+                    parser.behaviors.remove(&ParserBehaviors::Lazy);
+                };
+
+                value
             }
             _ => return lang_err!(UnexpectedToken(next)),
         };
