@@ -1,5 +1,6 @@
 # Flylang settings
 [language]
+default_file_extension="fly"
 compiler="flypreter"
 compilers_folders=[
   "$FLYLANG/addons"
@@ -10,6 +11,10 @@ global_folders=[
   "$FLYLANG/.globdeps"
 ]
 local_folder="$CWD/.deps"
+
+[language.importations]
+# If true, you can omit the ".fly" extension in use statement for importing files
+auto_default_extension=true
 
 # List of dependencies for the package
 [package.dependencies]

@@ -1,11 +1,16 @@
-use crate::flylang::{
-    errors::{LangResult, lang_err}, lexer::{ranges::{IS_FILE_LOCATION_IF_STARTS_WITH, in_ranges}, tokens::{Keywords, Literals, Toggleable, Token, Tokens}}, module::slice::LangModuleSlice, parser::{
+use std::{fs::{self, canonicalize}, path::PathBuf, rc::Rc};
+
+use clap::builder::OsStr;
+use toml::Value;
+
+use crate::{behavior::LangBehavior, flylang::{
+    errors::{LangResult, lang_err}, lexer::{ranges::{IS_FILE_LOCATION_IF_STARTS_WITH, in_ranges}, tokens::{Keywords, Literals, Toggleable, Token, Tokens}}, module::{LangModule, slice::LangModuleSlice}, parser::{
         Parser, ast::{
             Node,
             expressions::{Expressions, literals::{ParsedLiterals, ParsedStringItem, Word}}, instructions::Instructions,
         }, errors::{Expected, UnableToParse, UnexpectedNode, UnexpectedToken}, parsable::Parsable
     }
-};
+}, utils::macros::abs_path::absolute_path};
 
 #[derive(Debug, Clone)]
 pub enum PackageSource {
@@ -30,6 +35,8 @@ pub struct Package {
     pub source: PackageSource,
     pub included: PackageIncludedContent,
     pub emplacement: PackageContentEmplacement,
+
+    used_in: Rc<LangModule>
 }
 
 impl Package {
@@ -204,9 +211,91 @@ impl Parsable for Package {
             Self {
                 source,
                 included,
-                emplacement
+                emplacement,
+                used_in: Rc::clone(parser.module())
             },
             &location
         ))
+    }
+}
+
+
+impl Package {
+    /// Return the file location of the package's main file (or None if it does not exists)
+    pub fn path(&self, behaviors: &LangBehavior) -> Option<PathBuf> {
+        let found = match &self.source {
+            PackageSource::File(location) => {
+                let mut written_path = PathBuf::from(location);
+                if written_path.extension().is_none()
+                    && matches!(
+                        behaviors.get("language.importations.auto_default_extension").unwrap_or(Value::Boolean(false)),
+                        Value::Boolean(true)
+                    )
+                    && let Some(Value::String(default_extension)) = behaviors.get("language.default_file_extension")
+                 {
+                    written_path.set_extension(default_extension);
+                };
+
+                let expected = absolute_path!(self.used_in.path()).parent().unwrap().join(written_path);
+                if expected.exists() {
+                    Some(expected)
+                }else {
+                    None
+                }
+            },
+            PackageSource::Package(name) => {
+                let possible_folder_locations = [
+                    behaviors.get("language.dependencies.local_folder"),
+                    behaviors.get("language.dependencies.global_folders"),
+                ];
+
+                fn try_to_find_in(directory: Value, package_name: &str) -> Option<PathBuf> {
+                    match directory {
+                        Value::String(dir_location) => {
+                            let dir_path = PathBuf::from(dir_location).join(package_name);
+                            if !dir_path.exists() {
+                                return None;
+                            }
+
+                            let package_conf_path = dir_path.join("flylang.toml");
+                            if !package_conf_path.exists() {
+                                return None;
+                            }
+
+                            let package_conf = LangBehavior::new_parsed(&package_conf_path);
+                            let Some(Value::String(entrypoint)) = package_conf.get("entrypoint") else {
+                                return None
+                            };
+                            
+                            let entrypoint_path = dir_path.join(entrypoint);
+                            if !entrypoint_path.exists() {
+                                return None
+                            }
+
+                            Some(entrypoint_path)
+                        },
+                        Value::Array(others) => {
+                            for other in others {
+                                if let Some(path) = try_to_find_in(other, package_name) {
+                                    return Some(path)
+                                }
+                            }
+                            None
+                        }
+                        _ => None
+                    }
+                }
+
+                for dir in possible_folder_locations {
+                    if let Some(v) = dir && let Some(path) = try_to_find_in(v, name) {
+                        return Some(path)
+                    }
+                }
+
+                None
+            }
+        };
+
+        found.map(|p| fs::canonicalize(p).expect("The method returned an inexistant path."))
     }
 }
