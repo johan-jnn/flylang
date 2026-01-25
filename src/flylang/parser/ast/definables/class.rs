@@ -1,11 +1,15 @@
 use crate::flylang::{
     errors::lang_err,
-    lexer::tokens::{Keywords, Literals, ScopeTarget, Toggleable, Tokens},
+    lexer::tokens::{Keywords, Literals, Toggleable, Tokens},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
-            BoxedBranches, BoxedNode, Branches, Node,
-            definables::{Definables, functions::DefineFunction, variables::VariableEmplacements},
+            Node,
+            definables::{
+                Definables,
+                functions::DefineFunction,
+                variables::{DefineVariable, VariableEmplacements},
+            },
             expressions::{
                 Expressions,
                 literals::{ParsedLiterals, Word},
@@ -25,21 +29,11 @@ pub enum ClassItemVisibility {
 }
 
 #[derive(Debug, Clone)]
-pub struct ClassMethod {
-    pub name: Node<Word>,
-    pub arguments: BoxedBranches<Word>,
-    pub scope_target: Option<Node<ScopeTarget>>,
-    pub execution: Branches,
+pub struct ClassItem<Kind> {
     pub visibility: ClassItemVisibility,
     pub is_static: bool,
-}
-
-#[derive(Debug, Clone)]
-pub struct ClassAttribute {
-    pub name: Node<Word>,
-    pub value: BoxedNode<Expressions>,
-    pub visibility: ClassItemVisibility,
-    pub is_static: bool,
+    pub item: Kind,
+    pub modifie_by: Vec<Node<Word>>,
 }
 
 #[derive(Debug, Clone)]
@@ -47,8 +41,9 @@ pub struct DefineClass {
     pub name: Node<Word>,
     pub constructor: Option<Node<DefineFunction>>,
     pub parents: Vec<Node<Word>>,
-    pub attributes: Vec<Node<ClassAttribute>>,
-    pub methods: Vec<Node<ClassMethod>>,
+
+    pub attributes: Vec<Node<ClassItem<DefineVariable>>>,
+    pub methods: Vec<Node<ClassItem<DefineFunction>>>,
 }
 
 impl Parsable for DefineClass {
@@ -159,29 +154,33 @@ impl Parsable for DefineClass {
                 }
 
                 for instruction in branch {
-                    let Instructions::ValueOf(Expressions::Defined(defined_element)) =
-                        instruction.kind()
-                    else {
-                        return lang_err!(UnexpectedNode(instruction));
+                    let mut modifiers = vec![];
+                    let defined_element: &Definables = match &instruction.kind() {
+                        Instructions::ValueOf(Expressions::Defined(def)) => def,
+                        Instructions::ValueOf(Expressions::Modifed(modif)) => {
+                            modifiers = modif.modified_by.clone();
+                            modif.definable.kind()
+                        }
+                        _ => {
+                            return lang_err!(UnexpectedNode(instruction));
+                        }
                     };
 
                     match defined_element {
                         Definables::Function(method) => {
-                            let Some(method_name) = &method.name else {
+                            if method.name.is_none() {
                                 return lang_err!(UnableToParse(
                                     instruction.location().clone(),
                                     String::from("Methods must have a name")
                                 ));
-                            };
+                            }
 
                             methods.push(Node::new(
-                                ClassMethod {
-                                    name: method_name.clone(),
-                                    arguments: method.arguments.clone(),
-                                    scope_target: method.scope_target.clone(),
-                                    execution: method.execution.clone(),
+                                ClassItem {
                                     visibility: ClassItemVisibility::Public,
                                     is_static: false,
+                                    item: method.clone(),
+                                    modifie_by: modifiers,
                                 },
                                 instruction.location(),
                             ));
@@ -196,11 +195,11 @@ impl Parsable for DefineClass {
                             };
 
                             attributes.push(Node::new(
-                                ClassAttribute {
-                                    name: Node::new(Word, attribute.emplacement.location()),
-                                    value: attribute.value.clone(),
+                                ClassItem {
                                     visibility: ClassItemVisibility::Public,
                                     is_static: false,
+                                    item: attribute.clone(),
+                                    modifie_by: modifiers,
                                 },
                                 instruction.location(),
                             ));
