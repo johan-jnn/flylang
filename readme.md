@@ -29,7 +29,7 @@ Points ending with `*` means the syntax may change in futur.
 - [x] Scope naming (_`@name (...)`, `@<+`, `@<positive-integer>`_)
 - [x] Modifiers (_`#(modifier1, modifier2, ...) fn()`_)
 - [ ] Typing syntax
-- [ ] Keywords
+- [x] Keywords
   - [x] `if`
   - [x] `else`
   - [x] `fn`
@@ -67,8 +67,8 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [ ] Use
   - Partially implemented for now
   - [x] Parsed syntax
-  - [ ] Location resolver
-  - [ ] Imported module
+  - [x] Location resolver
+  - [ ] Module importation
 
 ### Analyser
 
