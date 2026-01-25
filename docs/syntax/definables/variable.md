@@ -28,7 +28,7 @@ life -: 2;
 
 || And this can be used with any operations
 toggler: false;
-toggler|:true; || toggler = true
+toggler?:true; || toggler = true
 
 pow: 2;
 pow **: 2**2; || pow = 8
