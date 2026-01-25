@@ -8,6 +8,7 @@ use crate::flylang::{
             definables::Definables,
             expressions::{
                 Expressions,
+                call::Call,
                 literals::{ParsedLiterals, Word},
             },
             instructions::Instructions,
@@ -18,9 +19,15 @@ use crate::flylang::{
 };
 
 #[derive(Clone, Debug)]
+pub enum Modifier {
+    DefinedElement,
+    CallReturn(Call),
+}
+
+#[derive(Clone, Debug)]
 pub struct ModifiedDefinable {
     pub definable: Node<Definables>,
-    pub modified_by: Vec<Node<Word>>,
+    pub modified_by: Vec<Node<Modifier>>,
 }
 
 impl Parsable for ModifiedDefinable {
@@ -65,15 +72,20 @@ impl Parsable for ModifiedDefinable {
             if modifier.len() != 1 {
                 return lang_err!(UnableToParse(slice, String::from("Expected function")));
             }
-            let word = &modifier[0];
-            if !matches!(
-                word.kind(),
-                Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Word))
-            ) {
-                return lang_err!(UnableToParse(slice, String::from("Expected function")));
-            }
+            let node = &modifier[0];
 
-            words.push(Node::new(Word, word.location()));
+            words.push(Node::new(
+                match &node.kind() {
+                    Instructions::ValueOf(Expressions::Literal(ParsedLiterals::Word)) => {
+                        Modifier::DefinedElement
+                    }
+                    Instructions::ValueOf(Expressions::ReturnOf(call)) => {
+                        Modifier::CallReturn(call.clone())
+                    }
+                    _ => return lang_err!(UnableToParse(slice, String::from("Expected function"))),
+                },
+                node.location(),
+            ));
         }
 
         parser.analyser.next(0, 0);

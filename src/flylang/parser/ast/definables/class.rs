@@ -13,6 +13,7 @@ use crate::flylang::{
             expressions::{
                 Expressions,
                 literals::{ParsedLiterals, Word},
+                modified::Modifier,
             },
             instructions::Instructions,
         },
@@ -33,7 +34,7 @@ pub struct ClassItem<Kind> {
     pub visibility: ClassItemVisibility,
     pub is_static: bool,
     pub item: Kind,
-    pub modifie_by: Vec<Node<Word>>,
+    pub modifie_by: Vec<Node<Modifier>>,
 }
 
 #[derive(Debug, Clone)]
