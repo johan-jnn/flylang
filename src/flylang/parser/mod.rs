@@ -205,7 +205,7 @@ impl Parser {
 
         while self.analyser.min_len(1) {
             self.behaviors = behaviors.clone();
-
+            
             let token = &self.analyser.get()[0];
             if force_stop(self, token) {
                 break;

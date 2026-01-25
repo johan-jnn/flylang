@@ -52,6 +52,7 @@ pub enum Keywords {
     Pass,
 
     Use,
+    From,
     In,
 }
 
