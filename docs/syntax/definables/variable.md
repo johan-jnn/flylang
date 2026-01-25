@@ -27,8 +27,8 @@ Let's image you have a variable named `life` that you want to increment. Surely 
 life -: 2;
 
 || And this can be used with any operations
-toggler: false;
-toggler?:true; || toggler = true
+sub: 20;
+sub-:10; || toggler = 10
 
 pow: 2;
 pow **: 2**2; || pow = 8
