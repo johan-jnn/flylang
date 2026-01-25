@@ -25,7 +25,7 @@ This roadmap may change in futur (because I surely forget some features)
 
 Points ending with `*` means the syntax may change in futur.
 
-- [x] Literals (tuples ?)
+- [x] Literals
 - [x] Scope naming (_`@name (...)`, `@<+`, `@<positive-integer>`_)
 - [x] Modifiers (_`#(modifier1, modifier2, ...) fn()`_)
 - [ ] Typing syntax
@@ -35,7 +35,7 @@ Points ending with `*` means the syntax may change in futur.
   - [x] `fn`
   - [x] `cs`
   - [x] `kind`
-  - [x] `use` (_`use "<module>" [(x,y,...)] [in <variable>]` - By just using `use <mod>`, all elements in `<mod>` will be global_)
+  - [x] `use` (_`use [(x, y, ...) from] "<module>" [in <variable>]` - By just using `use <mod>`, all elements in `<mod>` will be global_)
   - [x] **Breakers**
     - [x] `stop [@loop-scope?]` : stop (like _"break"_) a loop
     - [x] `return [@fn-scope?] [value?]` : return value to a function (default value too `()`)
@@ -56,6 +56,11 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Operations and priorities
 - [x] Class definition
 - [x] Class instanciation
+- [ ] Class items' visibility
+  - [x] Public (default)
+  - [ ] Private
+  - [ ] Protected
+  - [ ] Static
 - [x] If/else
 - [x] Loops
 - [x] Objects (_unstable_)
@@ -64,11 +69,10 @@ Element non implemented in the [Lexer](#lexer) is not marked in the list bellow.
 - [x] Modifiers
 - [x] Single expression function as lambda (ex: `fn foo(true)` will always return `true` (and not `()`) because it has only 1 instruction. To avoid this, use `fn foo(true; ())`)
 - [x] Breakers
-- [ ] Use
-  - Partially implemented for now
+- [x] Use
   - [x] Parsed syntax
   - [x] Location resolver
-  - [ ] Module importation
+  - [ ] Parsing
 
 ### Analyser
 
