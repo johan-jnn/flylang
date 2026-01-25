@@ -33,8 +33,8 @@ Finally, if you have nested functions, you can return at multiple's level functi
 ```fly
 fn(
   fn killer(
-    || Note that the scope can also be named (with @<name>)
-    return @-1;
+    || Note that the scope can also be named ("return @<name>")
+    return @-1 true;
   );
 
   killer();
