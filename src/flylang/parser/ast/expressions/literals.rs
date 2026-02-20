@@ -1,7 +1,7 @@
 use enum_variant_type::EnumVariantType;
 
 use crate::flylang::{
-    errors::{RaisableErr, lang_err},
+    errors::lang_err,
     lexer::tokens::{Literals, StringItem, Token, Tokens},
     parser::{
         Parser,
@@ -33,42 +33,9 @@ pub enum ParsedLiterals {
     String(Vec<Node<ParsedStringItem>>),
 }
 
-impl TryInto<Node<ParsedStringItem>> for Token<StringItem> {
-    type Error = Box<dyn RaisableErr>;
-
-    fn try_into(self) -> Result<Node<ParsedStringItem>, Self::Error> {
-        Ok(Node::new(
-            match self.kind() {
-                StringItem::Literal(content) => ParsedStringItem::Literal(content.clone()),
-                StringItem::Expression(expr) => {
-                    let mut parser = Parser::new(self.location().module(), expr.as_ref().clone());
-                    let parsed = parser.parse();
-
-                    if parsed.len() != 1 {
-                        return lang_err!(UnableToParse(
-                            self.location().clone(),
-                            "Expected a single expression".to_string()
-                        ));
-                    };
-                    let instruction = parsed[0].clone();
-
-                    let Instructions::ValueOf(expression) = instruction.kind() else {
-                        return lang_err!(UnexpectedNode(instruction));
-                    };
-
-                    ParsedStringItem::Expression(Box::new(Node::new(
-                        expression.clone(),
-                        instruction.location(),
-                    )))
-                }
-            },
-            self.location(),
-        ))
-    }
-}
-
 impl Parsable for ParsedLiterals {
     type ResultKind = Self;
+
     fn parse(
         parser: &mut crate::flylang::parser::Parser,
         previous: Option<Node>,
@@ -97,7 +64,7 @@ impl Parsable for ParsedLiterals {
             Literals::String(parts) => {
                 let mut parsed_parts = vec![];
                 for part in parts {
-                    parsed_parts.push(part.clone().try_into()?);
+                    parsed_parts.push(part.clone().parse(parser)?);
                 }
 
                 Self::String(parsed_parts)
@@ -105,5 +72,44 @@ impl Parsable for ParsedLiterals {
         };
 
         Ok(Node::new(literal, token.location()))
+    }
+}
+
+impl Token<StringItem> {
+    fn parse(
+        &self,
+        parser: &mut Parser,
+    ) -> crate::flylang::errors::LangResult<Node<ParsedStringItem>> {
+        Ok(Node::new(
+            match self.kind() {
+                StringItem::Literal(content) => ParsedStringItem::Literal(content.clone()),
+                StringItem::Expression(expr) => {
+                    let mut parser = Parser::new(
+                        self.location().module(),
+                        expr.as_ref().clone(),
+                        parser.lang_behaviors.clone(),
+                    );
+                    let parsed = parser.parse();
+
+                    if parsed.len() != 1 {
+                        return lang_err!(UnableToParse(
+                            self.location().clone(),
+                            "Expected a single expression".to_string()
+                        ));
+                    };
+                    let instruction = parsed[0].clone();
+
+                    let Instructions::ValueOf(expression) = instruction.kind() else {
+                        return lang_err!(UnexpectedNode(instruction));
+                    };
+
+                    ParsedStringItem::Expression(Box::new(Node::new(
+                        expression.clone(),
+                        instruction.location(),
+                    )))
+                }
+            },
+            self.location(),
+        ))
     }
 }

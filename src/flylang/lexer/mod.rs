@@ -1,4 +1,5 @@
 use crate::{
+    behavior::LangBehavior,
     flylang::{
         errors::{LangResult, RaisableErr, lang_err},
         lexer::{
@@ -28,20 +29,25 @@ pub struct Lexer {
     scope: Vec<Scope<LangModuleSlice>>,
     analyser: Analyser<LangModuleChar>,
     lexified: Vec<Token<Tokens>>,
+    lang_behaviors: LangBehavior,
 }
 
 impl Lexer {
-    pub fn new(module: &Rc<LangModule>) -> Self {
+    pub fn new(module: &Rc<LangModule>, behaviors: LangBehavior) -> Self {
         Self {
             module: Rc::clone(module),
             scope: vec![],
             analyser: Analyser::new(module.chars().collect()),
             lexified: vec![],
+            lang_behaviors: behaviors,
         }
     }
     /// Get the lexer's module
     pub fn module(&self) -> &Rc<LangModule> {
         &self.module
+    }
+    pub fn used_behaviors(&self) -> &LangBehavior {
+        &self.lang_behaviors
     }
 
     fn get_slice(&self) -> LangModuleSlice {

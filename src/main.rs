@@ -10,7 +10,10 @@ fn main() {
         flylang::cli::LangCommands::Exec { entrypoint, parser } => {
             let file = entrypoint.clone().expect("Default entry point not set.");
 
-            let mut parser = flylang::flylang::FlyLang::parser(PathBuf::from(file));
+            let mut parser = flylang::flylang::FlyLang::parser(
+                PathBuf::from(file),
+                Some(runner.behavior.clone()),
+            );
             let nodes = parser.parse();
             dbg!(nodes);
 

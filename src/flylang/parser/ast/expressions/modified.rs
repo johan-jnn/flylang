@@ -6,11 +6,7 @@ use crate::flylang::{
         ast::{
             Node,
             definables::Definables,
-            expressions::{
-                Expressions,
-                call::Call,
-                literals::{ParsedLiterals, Word},
-            },
+            expressions::{Expressions, call::Call, literals::ParsedLiterals},
             instructions::Instructions,
         },
         errors::{UnableToParse, UnexpectedToken},

@@ -1,19 +1,22 @@
 use std::{collections::HashSet, mem::take, rc::Rc, vec};
 
-use crate::flylang::{
-    errors::{LangResult, lang_err},
-    lexer::{
-        Lexer,
-        tokens::{ScopeTarget, Toggleable, Token, Tokens},
+use crate::{
+    behavior::LangBehavior,
+    flylang::{
+        errors::{LangResult, lang_err},
+        lexer::{
+            Lexer,
+            tokens::{ScopeTarget, Toggleable, Token, Tokens},
+        },
+        module::{LangModule, slice::LangModuleSlice},
+        parser::{
+            ast::{Branches, Node, instructions::Instructions},
+            errors::Expected,
+            mods::ParserBehaviors,
+            parsable::Parsable,
+        },
+        utils::analyser::Analyser,
     },
-    module::{LangModule, slice::LangModuleSlice},
-    parser::{
-        ast::{Branches, Node, instructions::Instructions},
-        errors::Expected,
-        mods::ParserBehaviors,
-        parsable::Parsable,
-    },
-    utils::analyser::Analyser,
 };
 
 pub mod ast;
@@ -27,6 +30,7 @@ pub struct Parser {
     analyser: Analyser<Token<Tokens>>,
     parsed: Branches,
     behaviors: HashSet<ParserBehaviors>,
+    lang_behaviors: LangBehavior,
 }
 // ? only used in the `scope` method
 type ScopeTokenMatcher = Box<dyn Fn(&Parser, &Token) -> bool>;
@@ -34,17 +38,26 @@ type ScopeTokenMatcher = Box<dyn Fn(&Parser, &Token) -> bool>;
 impl Parser {
     /// Create a new `Parser`
     /// Warning: the given stream must be valid : the openning/closing scopes will not be verified.
-    pub fn new(module: &Rc<LangModule>, stream: Vec<Token<Tokens>>) -> Self {
+    pub fn new(
+        module: &Rc<LangModule>,
+        stream: Vec<Token<Tokens>>,
+        behaviors: LangBehavior,
+    ) -> Self {
         Self {
             module: Rc::clone(module),
             analyser: Analyser::new(stream),
             parsed: vec![],
             behaviors: HashSet::new(),
+            lang_behaviors: behaviors,
         }
     }
     pub fn module(&self) -> &Rc<LangModule> {
         &self.module
     }
+    pub fn used_behaviors(&self) -> &LangBehavior {
+        &self.lang_behaviors
+    }
+
     /// Get the module's slice of the analyser's range
     fn analyser_slice(&self) -> LangModuleSlice {
         assert!(
@@ -205,7 +218,7 @@ impl Parser {
 
         while self.analyser.min_len(1) {
             self.behaviors = behaviors.clone();
-            
+
             let token = &self.analyser.get()[0];
             if force_stop(self, token) {
                 break;
@@ -252,6 +265,6 @@ impl Parser {
 impl From<&mut Lexer> for Parser {
     fn from(value: &mut Lexer) -> Self {
         let stream = value.lexify().to_vec();
-        Self::new(value.module(), stream)
+        Self::new(value.module(), stream, value.used_behaviors().clone())
     }
 }

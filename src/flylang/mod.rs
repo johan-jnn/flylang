@@ -1,7 +1,11 @@
 use std::{path::PathBuf, rc::Rc};
 
-use crate::flylang::{lexer::Lexer, module::LangModule, parser::Parser};
+use crate::{
+    behavior::LangBehavior,
+    flylang::{lexer::Lexer, module::LangModule, parser::Parser},
+};
 
+pub mod analyser;
 pub mod errors;
 pub mod lexer;
 pub mod module;
@@ -17,11 +21,11 @@ impl FlyLang {
     pub fn module(path: PathBuf) -> LangModule {
         LangModule::new(path).unwrap_or_else(|e| e.raise())
     }
-    pub fn lexer(path: PathBuf) -> Lexer {
-        Lexer::new(&Rc::new(Self::module(path)))
+    pub fn lexer(path: PathBuf, behaviors: Option<LangBehavior>) -> Lexer {
+        Lexer::new(&Rc::new(Self::module(path)), behaviors.unwrap_or_default())
     }
-    pub fn parser(path: PathBuf) -> Parser {
-        let mut lexer = Self::lexer(path);
+    pub fn parser(path: PathBuf, behaviors: Option<LangBehavior>) -> Parser {
+        let mut lexer = Self::lexer(path, behaviors);
         #[cfg(debug_assertions)]
         {
             dbg!(&lexer.lexify());
@@ -34,11 +38,22 @@ impl FlyLang {
     pub fn anonymous_module(script: &str, label: Option<&str>) -> LangModule {
         LangModule::new_from_raw(script.to_string(), label.unwrap_or("anonymous"))
     }
-    pub fn anonymous_lexer(script: &str, label: Option<&str>) -> Lexer {
-        Lexer::new(&Rc::new(Self::anonymous_module(script, label)))
+    pub fn anonymous_lexer(
+        script: &str,
+        label: Option<&str>,
+        behaviors: Option<LangBehavior>,
+    ) -> Lexer {
+        Lexer::new(
+            &Rc::new(Self::anonymous_module(script, label)),
+            behaviors.unwrap_or_default(),
+        )
     }
-    pub fn anonymous_parser(script: &str, label: Option<&str>) -> Parser {
-        let mut lexer = Self::anonymous_lexer(script, label);
+    pub fn anonymous_parser(
+        script: &str,
+        label: Option<&str>,
+        behaviors: Option<LangBehavior>,
+    ) -> Parser {
+        let mut lexer = Self::anonymous_lexer(script, label, behaviors);
         #[cfg(debug_assertions)]
         {
             dbg!(&lexer.lexify());

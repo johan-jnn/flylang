@@ -1,6 +1,5 @@
-use std::{fs::{self, canonicalize}, path::PathBuf, rc::Rc};
+use std::{fs, path::PathBuf, rc::Rc};
 
-use clap::builder::OsStr;
 use toml::Value;
 
 use crate::{behavior::LangBehavior, flylang::{

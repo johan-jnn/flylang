@@ -1,4 +1,5 @@
 use crate::flylang::{
+    analyser::analysable::Analysable,
     lexer::tokens::{Keywords, Tokens},
     parser::{
         ast::{
