@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use flylang::{LangRunner, flylang::parser::ast::instructions::Instructions};
+use flylang::{
+    LangRunner,
+    flylang::{analyser::LangAnalyser, parser::ast::instructions::Instructions},
+};
 
 fn main() {
     flylang::utils::env::extend_env();
@@ -10,18 +13,13 @@ fn main() {
         flylang::cli::LangCommands::Exec { entrypoint, parser } => {
             let file = entrypoint.clone().expect("Default entry point not set.");
 
-            let mut parser = flylang::flylang::FlyLang::parser(
+            let mut parser = flylang::flylang::FlyLang::analyser(
                 PathBuf::from(file),
                 Some(runner.behavior.clone()),
             );
-            let nodes = parser.parse();
-            dbg!(nodes);
+            let result = parser.analyse();
 
-            for node in nodes {
-                if let Instructions::Use(pkg) = node.kind() {
-                    dbg!(pkg, pkg.path(&runner.behavior));
-                }
-            }
+            dbg!(result);
         }
         flylang::cli::LangCommands::Pkg { action } => todo!(),
         flylang::cli::LangCommands::Parser { action, directory } => todo!(),

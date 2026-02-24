@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf, rc::Rc};
 use toml::Value;
 
 use crate::{behavior::LangBehavior, flylang::{
-    errors::{LangResult, lang_err}, lexer::{ranges::{IS_FILE_LOCATION_IF_STARTS_WITH, in_ranges}, tokens::{Keywords, Literals, Toggleable, Token, Tokens}}, module::{LangModule, slice::LangModuleSlice}, parser::{
+    FlyLang, analyser::{analysable::Analysable, errors::instructions::PackageNotFound}, errors::{LangResult, lang_err}, lexer::{ranges::{IS_FILE_LOCATION_IF_STARTS_WITH, in_ranges}, tokens::{Keywords, Literals, Toggleable, Token, Tokens}}, module::{LangModule, slice::LangModuleSlice}, parser::{
         Parser, ast::{
             Node,
             expressions::{Expressions, literals::{ParsedLiterals, ParsedStringItem, Word}}, instructions::Instructions,
@@ -296,5 +296,19 @@ impl Package {
         };
 
         found.map(|p| fs::canonicalize(p).expect("The method returned an inexistant path."))
+    }
+}
+
+impl Analysable for Node<Package> {
+    fn analyse<'a>(&self, analyser: &mut crate::flylang::analyser::LangAnalyser) -> LangResult<()> {
+        let location = self.kind().path(analyser.used_behaviors());
+        if let Some(path) = location {
+            FlyLang::analyser(path, Some(analyser.used_behaviors().clone()))
+                .is_children_of(Rc::clone(analyser.get_module()))
+                .analyse();
+            Ok(())
+        }else {
+            lang_err!(PackageNotFound(self.clone()))
+        }
     }
 }

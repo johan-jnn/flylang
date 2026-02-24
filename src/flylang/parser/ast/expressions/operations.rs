@@ -1,13 +1,10 @@
 use crate::flylang::{
-    errors::lang_err,
-    lexer::tokens::{self, Operator, Token, Tokens},
-    module::slice::LangModuleSlice,
-    parser::{
+    analyser::analysable::Analysable, errors::lang_err, lexer::tokens::{self, Operator, Token, Tokens}, module::slice::LangModuleSlice, parser::{
         ast::{BoxedNode, Node, expressions::Expressions, instructions::Instructions},
         errors::{UnexpectedNode, UnexpectedToken},
         mods::ParserBehaviors,
         parsable::Parsable,
-    },
+    }
 };
 
 type Operand = BoxedNode<Expressions>;
@@ -141,5 +138,14 @@ impl Parsable for Operations {
             },
             &location,
         ))
+    }
+}
+
+impl Analysable for Node<Operations> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        Ok(())
     }
 }

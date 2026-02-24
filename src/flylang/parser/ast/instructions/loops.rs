@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
 use crate::flylang::{
+    analyser::analysable::Analysable,
     errors::lang_err,
     lexer::tokens::{Keywords, ScopeTarget, Tokens},
     module::slice::LangModuleSlice,
@@ -182,5 +183,14 @@ impl Parsable for Loop {
             },
             &LangModuleSlice::from(&vec![token.location().clone(), parser.analyser_slice()]),
         ))
+    }
+}
+
+impl Analysable for Node<Loop> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        Ok(())
     }
 }

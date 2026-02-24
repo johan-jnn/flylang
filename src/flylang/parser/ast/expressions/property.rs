@@ -1,13 +1,10 @@
 use crate::flylang::{
-    errors::lang_err,
-    lexer::tokens::{Literals, Toggleable, Tokens},
-    module::slice::LangModuleSlice,
-    parser::{
+    analyser::analysable::Analysable, errors::lang_err, lexer::tokens::{Literals, Toggleable, Tokens}, module::slice::LangModuleSlice, parser::{
         ast::{BoxedNode, Node, expressions::Expressions, instructions::Instructions},
         errors::{Expected, UnexpectedNode, UnexpectedToken},
         mods::ParserBehaviors,
         parsable::Parsable,
-    },
+    }
 };
 
 #[derive(Debug, Clone)]
@@ -89,5 +86,14 @@ impl Parsable for ReadProperty {
             },
             location,
         ))
+    }
+}
+
+impl Analysable for Node<ReadProperty> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        Ok(())
     }
 }

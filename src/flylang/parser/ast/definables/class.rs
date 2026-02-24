@@ -1,4 +1,5 @@
 use crate::flylang::{
+    analyser::{analysable::Analysable, scoper::Storable},
     errors::lang_err,
     lexer::tokens::{Keywords, Literals, Toggleable, Tokens},
     module::slice::LangModuleSlice,
@@ -225,5 +226,17 @@ impl Parsable for DefineClass {
             },
             &location,
         ))
+    }
+}
+
+impl Analysable for Node<DefineClass> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        analyser.defined.store(Storable::Raw(
+            self.clone_as(|k, l| (Definables::Class(k), l)),
+        ));
+        Ok(())
     }
 }

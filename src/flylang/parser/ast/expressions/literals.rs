@@ -1,6 +1,7 @@
 use enum_variant_type::EnumVariantType;
 
 use crate::flylang::{
+    analyser::analysable::Analysable,
     errors::lang_err,
     lexer::tokens::{Literals, StringItem, Token, Tokens},
     parser::{
@@ -111,5 +112,14 @@ impl Token<StringItem> {
             },
             self.location(),
         ))
+    }
+}
+
+impl Analysable for Node<ParsedLiterals> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        Ok(())
     }
 }

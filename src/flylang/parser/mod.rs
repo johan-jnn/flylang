@@ -28,7 +28,7 @@ pub mod parsable;
 pub struct Parser {
     module: Rc<LangModule>,
     analyser: Analyser<Token<Tokens>>,
-    parsed: Branches,
+    parsed: Option<Branches>,
     behaviors: HashSet<ParserBehaviors>,
     lang_behaviors: LangBehavior,
 }
@@ -46,7 +46,7 @@ impl Parser {
         Self {
             module: Rc::clone(module),
             analyser: Analyser::new(stream),
-            parsed: vec![],
+            parsed: None,
             behaviors: HashSet::new(),
             lang_behaviors: behaviors,
         }
@@ -244,18 +244,20 @@ impl Parser {
 
     /// Execute the parser and return the vector of instructions
     pub fn parse(&mut self) -> &Branches {
-        let branches = self.branches(
-            |state, _| state.analyser.process_finished(),
-            |_, _| false,
-            None,
-        );
-        self.parsed = branches.unwrap_or_else(|e| e.raise()).pop().unwrap();
+        if self.parsed.is_none() {
+            let branches = self.branches(
+                |state, _| state.analyser.process_finished(),
+                |_, _| false,
+                None,
+            );
+            self.parsed = Some(branches.unwrap_or_else(|e| e.raise()).pop().unwrap());
+        }
 
-        &self.parsed
+        self.parsed.as_ref().unwrap()
     }
     /// Clear the parsed instructions and rebuild it
     pub fn reparse(&mut self) -> &Branches {
-        self.parsed = vec![];
+        self.parsed = None;
         self.analyser.set(0..0);
 
         self.parse()

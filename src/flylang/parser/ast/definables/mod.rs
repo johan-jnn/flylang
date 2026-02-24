@@ -1,9 +1,13 @@
 use crate::flylang::{
+    analyser::analysable::Analysable,
     errors::lang_err,
     lexer::tokens::{Keywords, Tokens},
     parser::{
-        ast::definables::{
-            class::DefineClass, functions::DefineFunction, variables::DefineVariable,
+        ast::{
+            Node,
+            definables::{
+                class::DefineClass, functions::DefineFunction, variables::DefineVariable,
+            },
         },
         errors::UnexpectedToken,
         parsable::Parsable,
@@ -45,6 +49,19 @@ impl Parsable for Definables {
                 Ok(node.clone_as(|k, l| (Self::Function(k), l)))
             }
             _ => lang_err!(UnexpectedToken(token.clone())),
+        }
+    }
+}
+
+impl Analysable for Node<Definables> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        match self.kind() {
+            Definables::Class(c) => Node::new(c.clone(), self.location()).analyse(analyser),
+            Definables::Function(f) => Node::new(f.clone(), self.location()).analyse(analyser),
+            Definables::Variable(v) => Node::new(v.clone(), self.location()).analyse(analyser),
         }
     }
 }

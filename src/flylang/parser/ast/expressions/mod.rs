@@ -1,4 +1,5 @@
 use crate::flylang::{
+    analyser::analysable::Analysable,
     errors::lang_err,
     lexer::tokens::{Keywords, Operator, Toggleable, Tokens},
     module::slice::LangModuleSlice,
@@ -286,5 +287,31 @@ impl Parsable for Expressions {
         }
 
         Ok(node)
+    }
+}
+
+impl Analysable for Node<Expressions> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        match self.kind().clone() {
+            Expressions::Array(arr) => {
+                Node::new(PrimaryObject::Arr(arr), self.location()).analyse(analyser)
+            }
+            Expressions::Structure(struc) => {
+                Node::new(PrimaryObject::Struct(struc), self.location()).analyse(analyser)
+            }
+            Expressions::Defined(def) => Node::new(def, self.location()).analyse(analyser),
+            Expressions::Instanciate(i) => Node::new(i, self.location()).analyse(analyser),
+            Expressions::Literal(l) => Node::new(l, self.location()).analyse(analyser),
+            Expressions::Modifed(m) => Node::new(m, self.location()).analyse(analyser),
+            Expressions::Operation(o) => Node::new(o, self.location()).analyse(analyser),
+            Expressions::Prioritized(p) => p.analyse(analyser),
+            Expressions::Read(r) => Node::new(r, self.location()).analyse(analyser),
+            Expressions::ReturnOf(c) => Node::new(c, self.location()).analyse(analyser),
+            Expressions::Reverse(r) => Node::new(r, self.location()).analyse(analyser),
+            Expressions::Ternary(t) => Node::new(t, self.location()).analyse(analyser),
+        }
     }
 }

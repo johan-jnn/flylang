@@ -7,5 +7,5 @@ pub trait Analysable {
     ///
     /// ## `analyser`
     /// The mutable analyser
-    fn analyse<'a>(&self, analyser: &mut LangAnalyser<'a>) -> LangResult<()>;
+    fn analyse<'a>(&self, analyser: &mut LangAnalyser) -> LangResult<()>;
 }

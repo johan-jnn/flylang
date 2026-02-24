@@ -28,7 +28,7 @@ pub struct Lexer {
     module: Rc<LangModule>,
     scope: Vec<Scope<LangModuleSlice>>,
     analyser: Analyser<LangModuleChar>,
-    lexified: Vec<Token<Tokens>>,
+    lexified: Option<Vec<Token<Tokens>>>,
     lang_behaviors: LangBehavior,
 }
 
@@ -38,7 +38,7 @@ impl Lexer {
             module: Rc::clone(module),
             scope: vec![],
             analyser: Analyser::new(module.chars().collect()),
-            lexified: vec![],
+            lexified: None,
             lang_behaviors: behaviors,
         }
     }
@@ -57,7 +57,11 @@ impl Lexer {
     /// Validate the current slice (`get_slice` method) with the given token.
     /// This inserts the created token to the lexified vector.
     fn validate_analyser(&mut self, kind: Tokens) {
-        self.lexified.push(Token::new(kind, &self.get_slice()));
+        let slice = self.get_slice();
+        self.lexified
+            .as_mut()
+            .unwrap()
+            .push(Token::new(kind, &slice));
 
         self.analyser.next(0, 0);
     }
@@ -145,7 +149,7 @@ impl Lexer {
         );
 
         // Split the `lexified` vector as [lexified, expression] after processing block.
-        let split_at = self.lexified.len();
+        let split_at = self.lexified.as_ref().unwrap().len();
         let outer_scope = self.scope.len();
         self.scope.push(Scope::Block(openner.clone()));
         self.analyser.next(0, 0);
@@ -161,9 +165,9 @@ impl Lexer {
         // Because the expression has been saved to the global lexified array,
         // we take them, and set the added expression as the string's expression,
         // and we place the other as the lexified expressions
-        let (lexified, expression_slice) = self.lexified.split_at(split_at);
+        let (lexified, expression_slice) = self.lexified.as_ref().unwrap().split_at(split_at);
         let mut expression = Vec::from(expression_slice);
-        self.lexified = Vec::from(lexified);
+        self.lexified = Some(Vec::from(lexified));
 
         // Remove the closing character and set the cursor on it
         self.analyser
@@ -311,7 +315,7 @@ impl Lexer {
         let _start = self.analyser.range().start;
         self.analyser.set(_start.._start);
 
-        let ambigus_as_num = match self.lexified.last() {
+        let ambigus_as_num = match self.lexified.as_ref().unwrap().last() {
             Some(t) => matches!(
                 t.kind(),
                 Tokens::ArgSeparator
@@ -557,7 +561,7 @@ impl Lexer {
                     self.analyser.next(0, 1);
 
                     self.literal()?;
-                    let lexified = self.lexified.pop().unwrap();
+                    let lexified = self.lexified.as_mut().unwrap().pop().unwrap();
                     self.analyser
                         .set(slice.range().start..lexified.location().range().end);
 
@@ -597,7 +601,7 @@ impl Lexer {
                 self.validate_analyser(Tokens::Operator(tokens::Operator::Modulo));
             }
             ";" => {
-                if let Some(last) = self.lexified.last()
+                if let Some(last) = self.lexified.as_ref().unwrap().last()
                     && let Tokens::EndOfInstruction = last.kind()
                 {
                     // Here we prevent following end of instruction (useless)
@@ -623,7 +627,7 @@ impl Lexer {
                     self.analyser.increase(1);
                 }
 
-                if let Some(previous) = self.lexified.last()
+                if let Some(previous) = self.lexified.as_ref().unwrap().last()
                     && let Tokens::Operator(operator) = previous.kind()
                 {
                     if constant {
@@ -644,7 +648,7 @@ impl Lexer {
                     );
 
                     // Remove the operation token
-                    self.lexified.pop();
+                    self.lexified.as_mut().unwrap().pop();
                     self.validate_analyser(kind);
 
                     return empty_result::ok!();
@@ -713,20 +717,24 @@ impl Lexer {
 
     /// Execute the lexer if needed and return the vector of tokens
     pub fn lexify(&mut self) -> &Vec<Token> {
-        while !self.analyser.process_finished() {
-            self.process().unwrap_or_else(|e| e.controlled_raise());
+        if self.lexified.is_none() {
+            self.lexified = Some(vec![]);
+
+            while !self.analyser.process_finished() {
+                self.process().unwrap_or_else(|e| e.controlled_raise());
+            }
+
+            if !self.scope.is_empty() {
+                UnclosedScope(self.scope.pop().unwrap()).controlled_raise();
+            }
         }
 
-        if !self.scope.is_empty() {
-            UnclosedScope(self.scope.pop().unwrap()).controlled_raise();
-        }
-
-        &self.lexified
+        self.lexified.as_ref().unwrap()
     }
 
     /// Clear the lexified tokens and rebuild it
     pub fn relexify(&mut self) -> &Vec<Token> {
-        self.lexified = vec![];
+        self.lexified = None;
         self.analyser.set(0..0);
 
         self.lexify()

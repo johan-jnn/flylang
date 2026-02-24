@@ -1,4 +1,4 @@
-use crate::flylang::{module::slice::LangModuleSlice, parser::ast::instructions::Instructions};
+use crate::flylang::{module::slice::LangModuleSlice, parser::{ast::instructions::Instructions, parsable::Parsable}};
 
 pub mod definables;
 pub mod expressions;

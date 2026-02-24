@@ -1,13 +1,9 @@
-use std::{
-    collections::{HashMap, hash_map::Values},
-    iter::Flatten,
-    rc::Rc,
-};
+use std::rc::Rc;
 
 use crate::{
     behavior::LangBehavior,
     flylang::{
-        analyser::scoper::Scoper,
+        analyser::{analysable::Analysable, scoper::Scoper},
         module::LangModule,
         parser::{
             Parser,
@@ -17,19 +13,20 @@ use crate::{
 };
 
 pub mod analysable;
+pub mod errors;
 pub mod scoper;
 
 #[derive(Clone, Debug)]
-pub struct LangAnalyser<'a> {
+pub struct LangAnalyser {
     module: Rc<LangModule>,
-    parent: Option<Box<&'a Self>>,
+    parent: Option<Rc<LangModule>>,
     parsed: Branches,
     lang_behaviors: LangBehavior,
 
-    defined: Scoper,
+    pub defined: Scoper,
 }
 
-impl LangAnalyser<'_> {
+impl LangAnalyser {
     pub fn new(module: &Rc<LangModule>, parsed: Vec<Node>, behaviors: LangBehavior) -> Self {
         Self {
             module: Rc::clone(module),
@@ -39,21 +36,29 @@ impl LangAnalyser<'_> {
             defined: Scoper::default(),
         }
     }
-    pub fn get_module(&self) -> &LangModule {
+    pub fn get_module(&self) -> &Rc<LangModule> {
         &self.module
     }
     pub fn used_behaviors(&self) -> &LangBehavior {
         &self.lang_behaviors
     }
+    pub fn is_children_of(&mut self, module: Rc<LangModule>) -> &mut Self {
+        self.parent = Some(module);
+        self
+    }
 
-    pub fn analyse(&mut self) {
-        // for node in &self.parsed {
-        //     node.kind()
-        // }
+    pub fn analyse(&mut self) -> bool {
+        for node in self.parsed.clone() {
+            if let Err(e) = node.analyse(self) {
+                e.controlled_raise();
+            }
+        }
+
+        true
     }
 }
 
-impl From<&mut Parser> for LangAnalyser<'_> {
+impl From<&mut Parser> for LangAnalyser {
     fn from(value: &mut Parser) -> Self {
         let parsed = value.parse().clone();
         let behaviors = value.used_behaviors().clone();

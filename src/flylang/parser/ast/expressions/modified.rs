@@ -1,4 +1,5 @@
 use crate::flylang::{
+    analyser::analysable::Analysable,
     errors::lang_err,
     lexer::tokens::Tokens,
     module::slice::LangModuleSlice,
@@ -113,5 +114,16 @@ impl Parsable for ModifiedDefinable {
             },
             &location,
         ))
+    }
+}
+
+impl Analysable for Node<ModifiedDefinable> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        self.kind().definable.analyse(analyser)?;
+
+        Ok(())
     }
 }

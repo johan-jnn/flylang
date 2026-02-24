@@ -80,3 +80,18 @@ impl Parsable for Instructions {
         Ok(instruction)
     }
 }
+
+impl Analysable for Node<Instructions> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        match self.kind().clone() {
+            Instructions::Break(b) => Node::new(b, self.location()).analyse(analyser),
+            Instructions::If(i) => Node::new(i, self.location()).analyse(analyser),
+            Instructions::Loop(l) => Node::new(l, self.location()).analyse(analyser),
+            Instructions::Use(u) => Node::new(u, self.location()).analyse(analyser),
+            Instructions::ValueOf(vo) => Node::new(vo, self.location()).analyse(analyser),
+        }
+    }
+}

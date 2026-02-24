@@ -1,4 +1,5 @@
 use crate::flylang::{
+    analyser::analysable::Analysable,
     lexer::tokens::{Keywords, ScopeTarget, Toggleable, Tokens},
     module::slice::LangModuleSlice,
     parser::{
@@ -85,5 +86,14 @@ impl Parsable for Break {
             },
             &location,
         ))
+    }
+}
+
+impl Analysable for Node<Break> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        Ok(())
     }
 }

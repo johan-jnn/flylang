@@ -1,10 +1,12 @@
 use crate::flylang::{
+    analyser::{analysable::Analysable, errors::definables::AlreadyDefined, scoper::Storable},
     errors::lang_err,
     lexer::tokens::{Tokens, VarDefinition},
     module::slice::LangModuleSlice,
     parser::{
         ast::{
             BoxedNode, Node,
+            definables::Definables,
             expressions::{
                 Expressions,
                 literals::ParsedLiterals,
@@ -130,5 +132,47 @@ impl Parsable for DefineVariable {
             },
             &def_location,
         ))
+    }
+}
+
+impl Analysable for Node<DefineVariable> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        if matches!(self.kind().emplacement.kind(), VariableEmplacements::Scope) {
+            let variable_name = self.kind().emplacement.location().code();
+
+            let already_defined =
+                analyser
+                    .defined
+                    .get_stored()
+                    .find(|stored| match stored.defined().kind() {
+                        Definables::Variable(var) => {
+                            if var.emplacement.location().code() == variable_name {
+                                var.readonly
+                            } else {
+                                false
+                            }
+                        }
+                        Definables::Function(func) => func
+                            .name
+                            .as_ref()
+                            .is_some_and(|name| name.location().code() == variable_name),
+                        Definables::Class(class) => class.name.location().code() == variable_name,
+                    });
+
+            if let Some(defined) = already_defined {
+                return lang_err!(AlreadyDefined {
+                    defined_node: defined.defined().clone(),
+                    defining_node: self.clone_as(|k, l| (Definables::Variable(k), l))
+                });
+            }
+        }
+
+        analyser.defined.store(Storable::Raw(
+            self.clone_as(|k, l| (Definables::Variable(k), l)),
+        ));
+        Ok(())
     }
 }

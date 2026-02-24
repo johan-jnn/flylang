@@ -1,4 +1,5 @@
 use crate::flylang::{
+    analyser::analysable::Analysable,
     errors::lang_err,
     lexer::tokens::{Keywords, ScopeTarget, Toggleable, Token, Tokens},
     module::slice::LangModuleSlice,
@@ -249,5 +250,14 @@ impl Parsable for IfFallBack {
                 })
             }
         }
+    }
+}
+
+impl Analysable for Node<If> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        Ok(())
     }
 }

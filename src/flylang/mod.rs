@@ -2,7 +2,7 @@ use std::{path::PathBuf, rc::Rc};
 
 use crate::{
     behavior::LangBehavior,
-    flylang::{lexer::Lexer, module::LangModule, parser::Parser},
+    flylang::{analyser::LangAnalyser, lexer::Lexer, module::LangModule, parser::Parser},
 };
 
 pub mod analyser;
@@ -34,6 +34,16 @@ impl FlyLang {
 
         Parser::from(&mut lexer)
     }
+    pub fn analyser(path: PathBuf, behaviors: Option<LangBehavior>) -> LangAnalyser {
+        let mut parser = Self::parser(path, behaviors);
+        #[cfg(debug_assertions)]
+        {
+            dbg!(&parser.parse());
+        }
+        parser.parse();
+
+        LangAnalyser::from(&mut parser)
+    }
 
     pub fn anonymous_module(script: &str, label: Option<&str>) -> LangModule {
         LangModule::new_from_raw(script.to_string(), label.unwrap_or("anonymous"))
@@ -61,5 +71,19 @@ impl FlyLang {
         lexer.lexify();
 
         Parser::from(&mut lexer)
+    }
+    pub fn anonymous_analyser(
+        script: &str,
+        label: Option<&str>,
+        behaviors: Option<LangBehavior>,
+    ) -> LangAnalyser {
+        let mut parser = Self::anonymous_parser(script, label, behaviors);
+        #[cfg(debug_assertions)]
+        {
+            dbg!(&parser.parse());
+        }
+        parser.parse();
+
+        LangAnalyser::from(&mut parser)
     }
 }

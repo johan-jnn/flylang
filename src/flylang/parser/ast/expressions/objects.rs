@@ -1,8 +1,5 @@
 use crate::flylang::{
-    errors::{LangResult, RaisableErr, lang_err},
-    lexer::tokens::{Toggleable, Tokens, VarDefinition},
-    module::slice::LangModuleSlice,
-    parser::{
+    analyser::analysable::Analysable, errors::{LangResult, RaisableErr, lang_err}, lexer::tokens::{Toggleable, Tokens, VarDefinition}, module::slice::LangModuleSlice, parser::{
         ast::{
             BoxedNodes, Node,
             definables::{
@@ -15,7 +12,7 @@ use crate::flylang::{
         errors::{UnableToParse, UnexpectedNode, UnexpectedToken},
         mods::ParserBehaviors,
         parsable::Parsable,
-    },
+    }
 };
 
 #[derive(Debug, Clone)]
@@ -177,5 +174,14 @@ impl Parsable for PrimaryObject {
             result.expect("Empty objects has invalid tests"),
             &location,
         ))
+    }
+}
+
+impl Analysable for Node<PrimaryObject> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        Ok(())
     }
 }

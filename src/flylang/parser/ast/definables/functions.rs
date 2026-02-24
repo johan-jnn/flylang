@@ -1,22 +1,17 @@
 use crate::flylang::{
-    errors::lang_err,
-    lexer::tokens::{Keywords, Literals, ScopeTarget, Toggleable, Tokens},
-    module::slice::LangModuleSlice,
-    parser::{
+    analyser::{analysable::Analysable, scoper::Storable}, errors::lang_err, lexer::tokens::{Keywords, Literals, ScopeTarget, Toggleable, Tokens}, module::slice::LangModuleSlice, parser::{
         ast::{
-            BoxedBranches, Branches, Node,
-            expressions::{
+            BoxedBranches, Branches, Node, definables::Definables, expressions::{
                 Expressions,
                 literals::{ParsedLiterals, Word},
-            },
-            instructions::{
+            }, instructions::{
                 Instructions,
                 breakers::{Break, BreakKind},
-            },
+            }
         },
         errors::{Expected, UnableToParse, UnexpectedNode, UnexpectedToken},
         parsable::Parsable,
-    },
+    }
 };
 
 #[derive(Debug, Clone)]
@@ -132,5 +127,17 @@ impl Parsable for DefineFunction {
             },
             &location,
         ))
+    }
+}
+
+impl Analysable for Node<DefineFunction> {
+    fn analyse<'a>(
+        &self,
+        analyser: &mut crate::flylang::analyser::LangAnalyser,
+    ) -> crate::flylang::errors::LangResult<()> {
+        analyser.defined.store(Storable::Raw(
+            self.clone_as(|k, l| (Definables::Function(k), l)),
+        ));
+        Ok(())
     }
 }

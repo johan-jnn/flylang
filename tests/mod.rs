@@ -10,15 +10,15 @@ pub mod tests {
 
     #[test]
     fn parser_with_raw_works() {
-        FlyLang::anonymous_parser(r#""#, SCRIPTS_LABEL);
+        FlyLang::anonymous_parser(r#""#, SCRIPTS_LABEL, None);
     }
     #[test]
     fn parser_with_file_works() {
-        FlyLang::parser(FlyLang::path("tests/scripts/empty.fly".to_string()));
+        FlyLang::parser(FlyLang::path("tests/scripts/empty.fly".to_string()), None);
     }
     #[test]
     #[should_panic]
     fn unknown_path_not_working() {
-        FlyLang::parser(FlyLang::path("".to_string()));
+        FlyLang::parser(FlyLang::path("".to_string()), None);
     }
 }
